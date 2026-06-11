@@ -1,1 +1,307 @@
-/* You can add global styles to this file, and also import other style files */
+html, body, app-root {
+  min-height: 100dvh;
+  margin: 0;
+  font-family: Inter, system-ui, sans-serif;
+  background: radial-gradient(circle at top left, #f7ef43 0%, #009c45 42%, #01337c 100%);
+  color: #10233f;
+}
+
+body {
+  min-height: 100dvh;
+}
+
+.app-shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(14px);
+}
+
+header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.2rem 1.5rem;
+  background: linear-gradient(135deg, #009c45 0%, #ffea3d 50%, #012169 100%);
+  color: #ffffff;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.18);
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+nav a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 110px;
+  color: #10233f;
+  text-decoration: none;
+  padding: 0.75rem 1rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+  font-weight: 700;
+}
+
+nav a:hover {
+  background: #ffea3d;
+  color: #012169;
+  transform: translateY(-1px);
+}
+
+main {
+  flex: 1;
+  padding: 2rem 1.5rem 3rem;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  position: relative;
+}
+
+main::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top center, rgba(255, 255, 255, 0.35), transparent 35%),
+    radial-gradient(circle at bottom right, rgba(255, 255, 255, 0.20), transparent 25%);
+  pointer-events: none;
+}
+
+.page {
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), #ffffff 100%);
+  border: 1px solid rgba(1, 77, 30, 0.14);
+  border-radius: 1.5rem;
+  padding: 2rem;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.14);
+  overflow: hidden;
+}
+
+.page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle at top left, rgba(1, 77, 30, 0.06), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(1, 18, 105, 0.08), transparent 25%);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.page header {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.page header h1 {
+  margin: 0;
+  font-size: clamp(1.9rem, 2.3vw, 2.7rem);
+  color: #012169;
+}
+
+.page header p {
+  margin: 0;
+  font-size: 1rem;
+  color: #243a57;
+}
+
+.hero-banner {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  padding: 1.75rem 1.5rem;
+  background: linear-gradient(135deg, #012169 0%, #009c45 55%, #ffea3d 100%);
+  color: #ffffff;
+  margin-bottom: 1.75rem;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.hero-banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.16) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+.hero-banner h2 {
+  margin: 0;
+  font-size: clamp(1.85rem, 2.4vw, 2.4rem);
+  font-weight: 800;
+}
+
+.hero-banner p {
+  margin: 0.9rem 0 0;
+  color: rgba(255, 255, 255, 0.95);
+  max-width: 38rem;
+}
+
+.link-grid,
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1.75rem;
+}
+
+.card {
+  position: relative;
+  z-index: 1;
+  display: block;
+  padding: 1.5rem;
+  border-radius: 1.25rem;
+  text-decoration: none;
+  color: #10233f;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(1, 77, 30, 0.12);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  inset: -20px -20px 0;
+  background: radial-gradient(circle at top left, rgba(1, 150, 69, 0.16), transparent 28%);
+  pointer-events: none;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 22px 45px rgba(0, 0, 0, 0.1);
+}
+
+.card strong {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-size: 1.1rem;
+  color: #065a14;
+}
+
+.card span {
+  color: #475569;
+}
+
+.form-card {
+  display: grid;
+  gap: 1.1rem;
+  max-width: 480px;
+  margin-top: 1.5rem;
+}
+
+.form-card label {
+  display: grid;
+  gap: 0.5rem;
+  font-weight: 700;
+  color: #10233f;
+}
+
+.form-card input {
+  width: 100%;
+  padding: 1rem 1.1rem;
+  border: 1px solid #00693b;
+  border-radius: 1rem;
+  background: #f6ffed;
+  color: #10233f;
+}
+
+.form-card button {
+  margin-top: 0.5rem;
+  width: fit-content;
+  padding: 1rem 1.5rem;
+  border: none;
+  border-radius: 1rem;
+  background: #ffea3d;
+  color: #012169;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.form-card button:hover {
+  background: #f9d918;
+}
+
+.empty-state,
+.footnote {
+  margin-top: 1.5rem;
+  color: #334155;
+  font-size: 1rem;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 999px;
+  background: #e3f8dc;
+  color: #065a14;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.intro-block {
+  padding: 1.25rem 1.35rem;
+  margin-top: 1rem;
+  border-radius: 1.1rem;
+  background: linear-gradient(135deg, rgba(255, 234, 61, 0.18), rgba(1, 77, 30, 0.06));
+  border: 1px solid rgba(1, 77, 30, 0.12);
+  color: #0b3f68;
+  font-weight: 600;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.95rem 1.4rem;
+  border-radius: 999px;
+  background: #012169;
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 700;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: #08337b;
+  transform: translateY(-1px);
+}
+
+a.router-link-active {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+@media (max-width: 780px) {
+  header {
+    justify-content: center;
+  }
+  nav {
+    justify-content: center;
+  }
+
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+}
