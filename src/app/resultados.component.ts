@@ -9,7 +9,7 @@ import { ResultadosService } from './resultados.service';
   template: `
     <section class="page page-resultados">
       <header>
-        <h1>🏆 Resultados</h1>
+        <h1><img src="taca.png" alt="Taça" class="header-icon" /> Resultados</h1>
         <p>Confira os placares oficiais das partidas. O ranking é atualizado automaticamente.</p>
       </header>
 
@@ -30,7 +30,7 @@ import { ResultadosService } from './resultados.service';
         </div>
 
         <div class="resultados-grid">
-          <article class="resultado-card" *ngFor="let resultado of resultadosService.resultados()">
+          <article class="resultado-card" *ngFor="let resultado of resultadosOrdenados()">
 
             <div class="resultado-placar">
               <span class="placar-principal">{{ resultado.placarA }} x {{ resultado.placarB }}</span>
@@ -56,6 +56,14 @@ import { ResultadosService } from './resultados.service';
     </section>
   `,
   styles: [`
+    .header-icon {
+      height: 1.8rem;
+      width: 1.8rem;
+      display: inline;
+      margin-right: 0.5rem;
+      vertical-align: middle;
+    }
+
     .resultados-container {
       margin-top: 1.5rem;
     }
@@ -258,6 +266,10 @@ export class ResultadosComponent implements OnInit {
 
   ngOnInit(): void {
     // Carrega automaticamente ao iniciar
+  }
+
+  protected resultadosOrdenados() {
+    return [...this.resultadosService.resultados()].reverse();
   }
 
   ultimaAtualizacao(): string {

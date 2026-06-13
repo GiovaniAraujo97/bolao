@@ -13,12 +13,25 @@ import { AuthService } from './auth.service';
         <header>
           <h1>{{ mode === 'login' ? 'Login' : 'Criar conta' }}</h1>
           <p *ngIf="mode === 'login'">Acompanhar o bolão da Adega.</p>
-          <p *ngIf="mode === 'signup'">Informe e-mail, senha e telefone para criar sua conta.</p>
+          <p *ngIf="mode === 'signup'">Informe nome, sobrenome, e-mail, senha e telefone para criar sua conta.</p>
         </header>
 
-        <form class="form-card" autocomplete="off" (submit)="mode === 'login' ? onLogin(emailInput.value, senhaInput.value) : onSignup(emailInput.value, senhaInput.value, telefone); $event.preventDefault();">
+        <form class="form-card" autocomplete="off" (submit)="mode === 'login' ? onLogin(emailInput.value, senhaInput.value) : onSignup(signupName, emailInput.value, senhaInput.value, telefone); $event.preventDefault();">
           <input aria-hidden="true" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;border:0;margin:0;padding:0;" autocomplete="username" />
           <input aria-hidden="true" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;border:0;margin:0;padding:0;" autocomplete="current-password" />
+
+          <label *ngIf="mode === 'signup'">
+            Nome e Sobrenome
+            <input
+              type="text"
+              name="signup-nome"
+              autocomplete="name"
+              placeholder="Nome Sobrenome"
+              [value]="signupName"
+              (input)="signupName = $any($event.target).value"
+              required
+            />
+          </label>
 
           <label>
             E-mail
@@ -69,6 +82,7 @@ export class LoginComponent implements OnInit {
   protected readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   protected mode: 'login' | 'signup' = 'login';
+  protected signupName = '';
   protected telefone = '';
 
   ngOnInit(): void {
@@ -85,6 +99,7 @@ export class LoginComponent implements OnInit {
 
   protected switchToLogin(): void {
     this.mode = 'login';
+    this.signupName = '';
     this.telefone = '';
     this.auth.message.set('');
   }
@@ -113,8 +128,8 @@ export class LoginComponent implements OnInit {
     }, 200);
   }
 
-  protected async onSignup(email: string, senha: string, telefone: string): Promise<void> {
-    if (!(await this.auth.signup(email, senha, telefone))) {
+  protected async onSignup(nome: string, email: string, senha: string, telefone: string): Promise<void> {
+    if (!(await this.auth.signup(nome, email, senha, telefone))) {
       return;
     }
 
@@ -122,7 +137,9 @@ export class LoginComponent implements OnInit {
       const dest = this.auth.isAdmin() ? '/admin' : '/dashboard';
       try {
         await this.router.navigate([dest]);
-      } catch (e) {}
+      } catch (e) {
+        // ignore
+      }
 
       setTimeout(() => {
         if (typeof window !== 'undefined' && window.location.pathname === '/login') {

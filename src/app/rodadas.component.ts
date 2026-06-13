@@ -12,8 +12,8 @@ import { PalpitesService, PalpitesParticipante } from './palpites.service';
   template: `
     <section class="page page-rodadas">
       <header>
-        <h1>🏟️ Rodadas</h1>
-        <p>Veja os palpites dos participantes e faça o seu. A classificação já considera: 10 pontos para placar exato, 0 ponto caso apenas o vencedor esteja certo ou o palpite esteja errado.</p>
+        <h1><img src="taca.png" alt="Taça" class="header-icon" /> Rodadas</h1>
+        <p>Pelo o que vai acontecer mesmo, 0 para quem perder e 10 para quem ganhar</p>
       </header>
 
       <div class="ranking-block" *ngIf="ranking().length > 0">
@@ -134,6 +134,14 @@ import { PalpitesService, PalpitesParticipante } from './palpites.service';
     </section>
   `,
   styles: [`
+    .header-icon {
+      height: 1.8rem;
+      width: 1.8rem;
+      display: inline;
+      margin-right: 0.5rem;
+      vertical-align: middle;
+    }
+
     .rodadas-container {
       display: grid;
       gap: 1.25rem;

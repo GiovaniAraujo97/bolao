@@ -6,6 +6,8 @@ export interface User {
   id: string;
   email: string;
   role: 'admin' | 'user';
+  firstName?: string;
+  lastName?: string;
 }
 
 export interface Profile {
@@ -14,6 +16,10 @@ export interface Profile {
   email: string;
   phone: string;
   role: 'admin' | 'user';
+  user_name?: string;
+  first_name?: string;
+  last_name?: string;
+  full_name?: string;
   created_at?: string;
 }
 
@@ -23,6 +29,7 @@ export interface Profile {
 export class AuthService {
   readonly user = signal<User | null>(null);
   readonly profile = signal<Profile | null>(null);
+  readonly name = signal<string | null>(null);
   readonly loading = signal(false);
   readonly message = signal('');
 
@@ -84,15 +91,19 @@ export class AuthService {
     }
   }
 
-  async signup(email: string, password: string, phone?: string): Promise<boolean> {
+  async signup(fullName: string, email: string, password: string, phone?: string): Promise<boolean> {
+    const normalizedFullName = fullName.trim();
     const normalizedEmail = email.trim().toLowerCase();
     const normalizedPassword = password.trim();
     const normalizedPhone = phone?.trim();
 
-    if (!normalizedEmail || !normalizedPassword || (phone !== undefined && !normalizedPhone)) {
-      this.message.set('E-mail, senha e telefone são obrigatórios.');
+    if (!normalizedFullName || !normalizedEmail || !normalizedPassword || (phone !== undefined && !normalizedPhone)) {
+      this.message.set('Nome completo, e-mail, senha e telefone são obrigatórios.');
       return false;
     }
+
+    const [firstName, ...rest] = normalizedFullName.split(' ').filter(Boolean);
+    const lastName = rest.join(' ') || '';
 
     this.loading.set(true);
     try {
@@ -100,7 +111,12 @@ export class AuthService {
         email: normalizedEmail,
         password: normalizedPassword,
         options: {
-          data: normalizedPhone ? { phone: normalizedPhone } : {}
+          data: {
+            phone: normalizedPhone || '',
+            first_name: firstName,
+            last_name: lastName,
+            full_name: normalizedFullName
+          }
         }
       });
 
@@ -173,11 +189,16 @@ export class AuthService {
     }
 
     const role = user.user_metadata?.role === 'admin' ? 'admin' : 'user';
+    const firstName = user.user_metadata?.first_name ?? user.user_metadata?.firstName ?? '';
+    const lastName = user.user_metadata?.last_name ?? user.user_metadata?.lastName ?? '';
     this.user.set({
       id: user.id,
       email: user.email,
-      role
+      role,
+      firstName: firstName || undefined,
+      lastName: lastName || undefined
     });
+    this.name.set(this.deriveNameFromMetadata(user.user_metadata));
 
     await this.ensureProfile({
       id: user.id,
@@ -201,6 +222,11 @@ export class AuthService {
     const existingProfile = await this.fetchProfile(user.id);
     if (existingProfile) {
       this.profile.set(existingProfile);
+      const profileName = this.deriveNameFromProfile(existingProfile);
+      const currentName = this.name();
+      if (profileName && (!currentName || profileName.length > currentName.length)) {
+        this.name.set(profileName);
+      }
       return;
     }
 
@@ -251,6 +277,73 @@ export class AuthService {
       user_id: data.user_id,
       completo: data
     });
-    return data as Profile;
+    const profile = data as Profile;
+    console.log('Perfil carregado:', {
+      email: profile.email,
+      role: profile.role,
+      phone: profile.phone,
+      user_id: profile.user_id,
+      completo: profile
+    });
+    const profileName = this.deriveNameFromProfile(profile);
+    const currentName = this.name();
+    if (profileName && (!currentName || profileName.length > currentName.length)) {
+      this.name.set(profileName);
+    }
+    return profile;
+  }
+
+  private deriveNameFromMetadata(metadata: any): string | null {
+    if (!metadata) {
+      return null;
+    }
+
+    const fullName = metadata.full_name ?? metadata.fullName ?? metadata.name ?? '';
+    if (typeof fullName === 'string' && fullName.trim()) {
+      return fullName.trim();
+    }
+
+    const firstName = metadata.first_name ?? metadata.firstName ?? '';
+    const lastName = metadata.last_name ?? metadata.lastName ?? '';
+    const combined = [firstName, lastName].filter(Boolean).join(' ').trim();
+    if (combined) {
+      return combined;
+    }
+
+    return null;
+  }
+
+  private deriveNameFromProfile(profile: Profile | null): string | null {
+    if (!profile) {
+      return null;
+    }
+
+    const fullName = profile.full_name ?? profile.user_name ?? '';
+    if (typeof fullName === 'string' && fullName.trim()) {
+      return fullName.trim();
+    }
+
+    const combined = [profile.first_name, profile.last_name].filter(Boolean).join(' ').trim();
+    return combined || null;
+  }
+
+  displayName(): string | null {
+    return this.name() || this.deriveNameFromProfile(this.profile()) || null;
+  }
+
+  displayNameLines(): string[] | null {
+    const displayName = this.displayName();
+    if (!displayName) {
+      return null;
+    }
+
+    const parts = displayName.trim().split(/\s+/);
+    if (parts.length === 0) {
+      return null;
+    }
+
+    const firstLine = parts.shift() ?? '';
+    const secondLine = parts.length > 0 ? parts.join(' ') : null;
+    return secondLine ? [firstLine, secondLine] : [firstLine];
   }
 }

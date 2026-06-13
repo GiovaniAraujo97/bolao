@@ -21,7 +21,7 @@ interface PalpiteComResultado {
   template: `
     <section class="page page-meus-palpites">
       <header>
-        <h1>🎯 Meus Palpites</h1>
+        <h1><img src="taca.png" alt="Taça" class="header-icon" /> Meus Palpites</h1>
         <p>Acompanhe seus palpites e acertos ao longo da Copa.</p>
       </header>
 
@@ -98,6 +98,22 @@ interface PalpiteComResultado {
     </section>
   `,
   styles: [`
+    .header-icon {
+      height: 1.8rem;
+      width: 1.8rem;
+      display: inline;
+      margin-right: 0.5rem;
+      vertical-align: middle;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+    }
+
+    header p {
+      font-size: 0.9rem;
+    }
+
     .resumo-stats {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));

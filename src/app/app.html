@@ -1,5 +1,10 @@
 <div class="app-shell">
   <header class="app-header">
+    <div class="header-user" *ngIf="auth.isAuthenticated() && auth.displayNameLines() as nameLines">
+      <span class="header-user-line">{{ nameLines[0] }}</span>
+      <span class="header-user-line" *ngIf="nameLines[1]">{{ nameLines[1] }}</span>
+    </div>
+
     <div class="brand-group">
       <div class="brand-crest">
         <a routerLink="/dashboard" class="brand-link" aria-label="Ir para o painel">
@@ -9,7 +14,7 @@
       <div class="brand-copy">
         <p class="eyebrow">Bolão da Copa na Adega</p>
         <div class="profile-summary" *ngIf="auth.isAuthenticated()">
-          <span>{{ auth.profile()?.email || auth.user()?.email }}</span>
+          <span class="profile-name">{{ auth.displayName() || auth.profile()?.email || auth.user()?.email }}</span>
           <span *ngIf="auth.profile()">• {{ auth.profile()?.phone }}</span>
           <span *ngIf="auth.profile()">• {{ auth.profile()?.role }}</span>
         </div>
@@ -17,11 +22,11 @@
     </div>
 
     <div class="mobile-menu" [class.open]="mobileMenuOpen()">
-      <button type="button" class="menu-toggle" aria-label="Abrir menu" aria-expanded="{{ mobileMenuOpen() }}" (click)="toggleMobileMenu()">
+      <button type="button" class="menu-toggle" [class.open]="mobileMenuOpen()" aria-label="Abrir menu" aria-expanded="{{ mobileMenuOpen() }}" (click)="toggleMobileMenu()">
         <svg width="22" height="16" viewBox="0 0 22 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-          <rect y="1" width="22" height="2" rx="1" fill="white" />
-          <rect y="7" width="22" height="2" rx="1" fill="white" />
-          <rect y="13" width="22" height="2" rx="1" fill="white" />
+          <rect y="1" width="22" height="2" rx="1" fill="currentColor" />
+          <rect y="7" width="22" height="2" rx="1" fill="currentColor" />
+          <rect y="13" width="22" height="2" rx="1" fill="currentColor" />
         </svg>
       </button>
       <div class="mobile-backdrop" *ngIf="mobileMenuOpen()" (click)="toggleMobileMenu()"></div>
