@@ -1,6 +1,6 @@
-import { Component, effect, inject, OnInit } from '@angular/core';
+import { Component, effect, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RodadasService, Rodada, Jogo } from './rodadas.service';
+import { RodadasService, Jogo } from './rodadas.service';
 import { ResultadosService, Resultado } from './resultados.service';
 import { PalpitesService } from './palpites.service';
 
@@ -11,6 +11,7 @@ interface PalpiteComResultado {
   placarA?: string;
   placarB?: string;
   acertou: boolean;
+  exato: boolean;
 }
 
 @Component({
@@ -25,7 +26,7 @@ interface PalpiteComResultado {
       </header>
 
       <div *ngIf="todasPalpites().length === 0" class="intro-block">
-        <p>🤔 Você ainda não fez nenhum palpite. Vá para <strong>Rodadas</strong> e comece a participar!</p>
+        <p>🤔 Você ainda não fez nenhum palpite. Faça seu primeiro palpite para começar a acompanhar!</p>
       </div>
 
       <div *ngIf="todasPalpites().length > 0" class="resumo-stats">
@@ -34,51 +35,63 @@ interface PalpiteComResultado {
           <span class="stat-label">Total de Palpites</span>
         </div>
         <div class="stat-card">
-          <span class="stat-valor">{{ pontosTotais }}</span>
-          <span class="stat-label">Pontos</span>
-        </div>
-        <div class="stat-card acertos">
-          <span class="stat-valor">{{ exatosTotais }}</span>
-          <span class="stat-label">Acertos Exatos</span>
+          <span class="stat-valor">{{ getPontosTotais() }}</span>
+          <span class="stat-label">Pontos Totais</span>
+        </div>        <div class="stat-card">
+          <span class="stat-valor">{{ getAcertosTotais() }}</span>
+          <span class="stat-label">Acertos Totais</span>
+        </div>        <div class="stat-card acertos">
+          <span class="stat-valor">{{ getExatosTotais() }}</span>
+          <span class="stat-label">Exatos Totais</span>
         </div>
       </div>
 
-      <div *ngFor="let rodada of rodasComPalpites()" class="rodada-palpites">
-        <div class="rodada-header">
-          <h2>📅 {{ rodada.dataFormatada }} ({{ rodada.diaSemana }})</h2>
-          <span class="rodada-numero">🎯 Rodada {{ rodada.numero }}</span>
-        </div>
-
-        <div class="palpites-lista">
-          <div *ngFor="let palpite of getPalpitesRodada(rodada)" class="palpite-item">
-            <div class="times-info">
-              <span class="time">{{ palpite.jogo.time1 }}</span>
-              <span class="horario">{{ palpite.jogo.horario }}</span>
-              <span class="time">{{ palpite.jogo.time2 }}</span>
-            </div>
-
-            <div class="palpite-resultado">
-              <div class="meu-palpite">
-                <span class="placar">{{ palpite.palpiteA }} x {{ palpite.palpiteB }}</span>
-                <span class="label">Meu Palpite</span>
+      <div class="palpites-lista">
+        <div *ngFor="let palpite of todasPalpites()" class="palpite-item">
+          <div class="times-info">
+                <div class="team-card">
+                  <img
+                    [src]="teamImageUrl(palpite.jogo.time1)"
+                    [alt]="palpite.jogo.time1"
+                    class="team-logo"
+                    (error)="onTeamImageError($event, palpite.jogo.time1)"
+                  />
+                  <span class="team-name">{{ palpite.jogo.time1 }}</span>
+                </div>
+                <span class="horario">{{ formatDateBR(palpite.jogo.data) }} • {{ palpite.jogo.horario }}</span>
+                <div class="team-card">
+                  <img
+                    [src]="teamImageUrl(palpite.jogo.time2)"
+                    [alt]="palpite.jogo.time2"
+                    class="team-logo"
+                    (error)="onTeamImageError($event, palpite.jogo.time2)"
+                  />
+                  <span class="team-name">{{ palpite.jogo.time2 }}</span>
+                </div>
               </div>
 
-              <div *ngIf="palpite.placarA !== undefined" [class.acertou]="palpite.acertou" class="resultado-real">
-                <span class="placar">{{ palpite.placarA }} x {{ palpite.placarB }}</span>
-                <span class="label">Resultado</span>
-              </div>
-
-              <div *ngIf="palpite.placarA === undefined" class="resultado-real pendente">
-                <span class="placar">? x ?</span>
-                <span class="label">Pendente</span>
-              </div>
+          <div class="palpite-resultado">
+            <div class="meu-palpite">
+              <span class="placar">{{ palpite.palpiteA }} x {{ palpite.palpiteB }}</span>
+              <span class="label">Meu Palpite</span>
             </div>
 
-            <div [class.acertou]="palpite.acertou" class="status-badge">
-              <span *ngIf="palpite.placarA === undefined">⏳</span>
-              <span *ngIf="palpite.placarA !== undefined && palpite.acertou">✅</span>
-              <span *ngIf="palpite.placarA !== undefined && !palpite.acertou">❌</span>
+            <div *ngIf="palpite.placarA !== undefined" [class.acertou]="palpite.acertou" class="resultado-real">
+              <span class="placar">{{ palpite.placarA }} x {{ palpite.placarB }}</span>
+              <span class="label">Resultado</span>
             </div>
+
+            <div *ngIf="palpite.placarA === undefined" class="resultado-real pendente">
+              <span class="placar">? x ?</span>
+              <span class="label">Pendente</span>
+            </div>
+          </div>
+
+          <div [class.acertou]="palpite.acertou" [class.exato]="palpite.exato" class="status-badge">
+            <span *ngIf="palpite.placarA === undefined">⏳</span>
+            <span *ngIf="palpite.placarA !== undefined && palpite.exato">✅</span>
+            <span *ngIf="palpite.placarA !== undefined && !palpite.exato && palpite.acertou">✅</span>
+            <span *ngIf="palpite.placarA !== undefined && !palpite.acertou">❌</span>
           </div>
         </div>
       </div>
@@ -182,6 +195,33 @@ interface PalpiteComResultado {
       text-align: center;
     }
 
+    .team-card {
+      display: grid;
+      gap: 0.5rem;
+      align-items: center;
+      justify-items: center;
+    }
+
+    .team-logo {
+      width: 60px;
+      height: 60px;
+      object-fit: contain;
+      border-radius: 12px;
+      background: white;
+      border: 1px solid rgba(1, 77, 30, 0.12);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .team-name {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #10233f;
+      max-width: 100px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     .time {
       font-weight: 600;
       font-size: 0.85rem;
@@ -255,12 +295,13 @@ interface PalpiteComResultado {
       width: 40px;
       height: 40px;
       border-radius: 50%;
-      background: rgba(1, 77, 30, 0.1);
+      background: transparent;
       font-size: 1.3rem;
     }
 
-    .status-badge.acertou {
-      background: rgba(0, 156, 69, 0.2);
+    .status-badge.acertou,
+    .status-badge.exato {
+      background: transparent;
     }
 
     @media (max-width: 760px) {
@@ -298,22 +339,24 @@ export class MeusPalpitesComponent implements OnInit {
   private resultadosService = inject(ResultadosService);
   private palpitesService = inject(PalpitesService);
 
-  private palpites: { [key: string]: number } = {};
-  private palpitesMap: Map<string, PalpiteComResultado> = new Map();
-  protected pontosTotais = 0;
-  protected acertosTotais = 0;
-  protected exatosTotais = 0;
+  private palpites = signal<{ [key: string]: number }>({});
+  private palpitesMap = signal<PalpiteComResultado[]>([]);
+  protected pontosTotais = signal(0);
+  protected acertosTotais = signal(0);
+  protected exatosTotais = signal(0);
+
+  protected readonly palpiteEffect = effect(() => {
+    this.carregarPalpites();
+    this.processarPalpitesComResultados();
+    this.atualizarEstatisticas();
+  });
 
   ngOnInit(): void {
-    effect(() => {
-      this.carregarPalpites();
-      this.processarPalpitesComResultados();
-      this.atualizarEstatisticas();
-    });
+    // inicialização feita pelo efeito reativo `palpiteEffect`
   }
 
   private carregarPalpites(): void {
-    this.palpites = this.palpitesService.getPalpitesUsuarioAtual();
+    this.palpites.set(this.palpitesService.getPalpitesUsuarioAtual());
   }
 
   private processarPalpitesComResultados(): void {
@@ -327,33 +370,39 @@ export class MeusPalpitesComponent implements OnInit {
       resultados.map(r => [r.partida.toLowerCase(), { placarA: r.placarA, placarB: r.placarB }])
     );
 
+    const novosPalpites: PalpiteComResultado[] = [];
+
     this.rodadasService.getRodadas().forEach(rodada => {
       rodada.jogos.forEach(jogo => {
         const palpiteKeyA = jogo.id;
         const palpiteKeyB = jogo.id + '-b';
 
-        if (palpiteKeyA in this.palpites && palpiteKeyB in this.palpites) {
-          const palpiteA = this.palpites[palpiteKeyA];
-          const palpiteB = this.palpites[palpiteKeyB];
+        if (palpiteKeyA in this.palpites() && palpiteKeyB in this.palpites()) {
+          const palpiteA = this.palpites()[palpiteKeyA];
+          const palpiteB = this.palpites()[palpiteKeyB];
 
           const resultado = resultadosPorId.get(jogo.id)
             ?? resultadosPorPartida.get(`${jogo.time1.toLowerCase()} x ${jogo.time2.toLowerCase()}`);
 
-          const acertou = resultado
+          const exato = resultado
             ? parseInt(resultado.placarA, 10) === palpiteA && parseInt(resultado.placarB, 10) === palpiteB
             : false;
+          const acertou = exato;
 
-          this.palpitesMap.set(jogo.id, {
+          novosPalpites.push({
             jogo,
             palpiteA,
             palpiteB,
             placarA: resultado?.placarA,
             placarB: resultado?.placarB,
-            acertou
+            acertou,
+            exato
           });
         }
       });
     });
+
+    this.palpitesMap.set(novosPalpites);
   }
 
   private atualizarEstatisticas(): void {
@@ -361,42 +410,78 @@ export class MeusPalpitesComponent implements OnInit {
     const participante = this.palpitesService.getParticipanteAtual();
     const meuRanking = participante ? ranking.find(item => item.email === participante.email) : null;
 
-    this.pontosTotais = meuRanking?.pontos ?? 0;
-    this.acertosTotais = meuRanking?.acertos ?? 0;
-    this.exatosTotais = meuRanking?.exatos ?? 0;
+    this.pontosTotais.set(meuRanking?.pontos ?? 0);
+    this.acertosTotais.set(meuRanking?.acertos ?? 0);
+    this.exatosTotais.set(meuRanking?.exatos ?? 0);
   }
 
-  rodasComPalpites(): Rodada[] {
-    const rodasUniqueDates = new Map<string, Rodada>();
-    this.palpitesMap.forEach(palpite => {
-      const rodada = this.rodadasService
-        .getRodadas()
-        .find(r => r.jogos.some(j => j.id === palpite.jogo.id));
-      if (rodada) {
-        rodasUniqueDates.set(rodada.id, rodada);
-      }
-    });
-    return Array.from(rodasUniqueDates.values()).sort((a, b) =>
-      new Date(a.data).getTime() - new Date(b.data).getTime()
-    );
+  private normalizeTeamName(team: string): string {
+    return team
+      .trim()
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '');
   }
 
-  getPalpitesRodada(rodada: Rodada): PalpiteComResultado[] {
-    return rodada.jogos
-      .map(jogo => this.palpitesMap.get(jogo.id))
-      .filter((p): p is PalpiteComResultado => p !== undefined);
+  teamImageUrl(team: string, ext = 'png'): string {
+    if (!team) return '';
+    const normalized = this.normalizeTeamName(team);
+    return `/${encodeURIComponent(normalized)}.${ext}`;
+  }
+
+  onTeamImageError(event: Event, team: string): void {
+    const img = event.target as HTMLImageElement;
+    if (!img) return;
+    const normalized = this.normalizeTeamName(team);
+    if (img.src.endsWith('.png')) {
+      img.src = `/${encodeURIComponent(normalized)}.jpg`;
+      return;
+    }
+    if (img.src.endsWith('.jpg')) {
+      img.src = `/${encodeURIComponent(normalized)}.jpeg`;
+      return;
+    }
+  }
+
+  formatDateBR(date?: string): string {
+    if (!date) return '';
+    const m = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+    const d = new Date(date);
+    if (!isNaN(d.getTime())) {
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const yyyy = d.getFullYear();
+      return `${dd}/${mm}/${yyyy}`;
+    }
+    return date;
+  }
+
+  // getters para template — evita exposição direta do objeto `Signal`
+  getPontosTotais(): number {
+    return this.pontosTotais();
+  }
+
+  getExatosTotais(): number {
+    return this.exatosTotais();
+  }
+
+  getAcertosTotais(): number {
+    return this.acertosTotais();
   }
 
   todasPalpites(): PalpiteComResultado[] {
-    return Array.from(this.palpitesMap.values());
+    return this.palpitesMap();
   }
 
   totalPalpites(): number {
-    return this.palpitesMap.size;
+    return this.palpitesMap().length;
   }
 
   acertos(): number {
-    return Array.from(this.palpitesMap.values()).filter(p => p.acertou).length;
+    return this.palpitesMap().filter(p => p.acertou).length;
   }
 
   percentualAcerto(): number {

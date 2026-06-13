@@ -31,12 +31,20 @@ import { ResultadosService } from './resultados.service';
 
         <div class="resultados-grid">
           <article class="resultado-card" *ngFor="let resultado of resultadosService.resultados()">
-            <div class="resultado-header">
-              <h3>{{ resultado.partida }}</h3>
-            </div>
 
             <div class="resultado-placar">
               <span class="placar-principal">{{ resultado.placarA }} x {{ resultado.placarB }}</span>
+            </div>
+
+            <div class="resultado-times-imagens">
+              <div class="time-img">
+                <img [src]="imageUrl(teamName(resultado.partida, 0))" (error)="onImageError($event, teamName(resultado.partida, 0))" alt="time1" />
+                <span class="time-label">{{ teamName(resultado.partida, 0) }}</span>
+              </div>
+              <div class="time-img">
+                <img [src]="imageUrl(teamName(resultado.partida, 1))" (error)="onImageError($event, teamName(resultado.partida, 1))" alt="time2" />
+                <span class="time-label">{{ teamName(resultado.partida, 1) }}</span>
+              </div>
             </div>
 
             <div class="resultado-footer">
@@ -144,6 +152,41 @@ import { ResultadosService } from './resultados.service';
       font-weight: 600;
     }
 
+    .resultado-times-imagens {
+      display: flex;
+      justify-content: space-around;
+      gap: 1rem;
+      align-items: center;
+      margin-top: 0.5rem;
+    }
+
+    .time-img {
+      display: grid;
+      gap: 0.25rem;
+      align-items: center;
+      justify-items: center;
+    }
+
+    .time-img img {
+      width: 56px;
+      height: 56px;
+      object-fit: contain;
+      border-radius: 6px;
+      background: white;
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+
+    .time-label {
+      font-size: 0.7rem;
+      color: #10233f;
+      font-weight: 700;
+      text-align: center;
+      max-width: 80px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     @media (max-width: 760px) {
       .resultados-grid {
         grid-template-columns: 1fr;
@@ -169,6 +212,49 @@ import { ResultadosService } from './resultados.service';
 })
 export class ResultadosComponent implements OnInit {
   protected readonly resultadosService = inject(ResultadosService);
+  
+  // Extrai nome do time a partir da string de partida (ex: "Brasil x Croácia").
+  teamName(partida: string, index: 0 | 1): string {
+    if (!partida) return '';
+    const sep = partida.includes(' x ') ? ' x ' : partida.includes(' X ') ? ' X ' : ' x ';
+    const parts = partida.split(sep).map(p => p.trim());
+    return parts[index] || '';
+  }
+
+  private normalizeTeamName(team: string): string {
+    if (!team) return '';
+    return team
+      .trim()
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '');
+  }
+
+  imageUrl(teamNameRaw: string, ext = 'png'): string {
+    if (!teamNameRaw) return '';
+    const normalized = this.normalizeTeamName(teamNameRaw);
+    return `/${encodeURIComponent(normalized)}.${ext}`;
+  }
+
+  onImageError(event: any, teamNameRaw: string): void {
+    try {
+      const img = event?.target as HTMLImageElement;
+      if (!img) return;
+      const normalized = this.normalizeTeamName(teamNameRaw);
+      if (img.src.endsWith('.png')) {
+        img.src = `/${encodeURIComponent(normalized)}.jpg`;
+        return;
+      }
+      if (img.src.endsWith('.jpg')) {
+        img.src = `/${encodeURIComponent(normalized)}.jpeg`;
+        return;
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
 
   ngOnInit(): void {
     // Carrega automaticamente ao iniciar
@@ -177,11 +263,17 @@ export class ResultadosComponent implements OnInit {
   ultimaAtualizacao(): string {
     const resultados = this.resultadosService.resultados();
     if (resultados.length === 0) return 'N/A';
-    
-    const datas = resultados.map(r => new Date(r.atualizadoEm).getTime());
-    const maioRecente = new Date(Math.max(...datas));
-    
-    return this.formatarHora(maioRecente.toLocaleString('pt-BR'));
+    const times = resultados
+      .map(r => {
+        const t = Date.parse(r.atualizadoEm);
+        return isNaN(t) ? null : t;
+      })
+      .filter((t): t is number => t !== null);
+
+    if (times.length === 0) return 'N/A';
+
+    const recent = new Date(Math.max(...times));
+    return this.formatarHora(recent.toISOString());
   }
 
   formatarHora(data: string): string {

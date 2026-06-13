@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RodadasService, Rodada, Jogo } from './rodadas.service';
+import { RodadasService, Jogo } from './rodadas.service';
 import { ResultadosService } from './resultados.service';
 
 interface JogoComResultado extends Jogo {
@@ -35,50 +35,49 @@ interface JogoComResultado extends Jogo {
         </div>
       </div>
 
-      <div class="rodadas-admin">
-        <div *ngFor="let rodada of rodadasService.getRodadas(); trackBy: trackByRodada" class="rodada-bloco">
-          <div class="rodada-titulo">
-            <h2>📅 {{ rodada.dataFormatada }} ({{ rodada.diaSemana }})</h2>
-            <span class="rodada-num">Rodada {{ rodada.numero }}</span>
+      <div *ngIf="feedback()" class="feedback-message">{{ feedback() }}</div>
+
+      <div class="partidas-admin">
+        <div *ngFor="let jogo of jogosComResultados(); trackBy: trackByJogo" class="partida-card">
+          <div class="partida-times">
+            <span class="time-a">{{ jogo.time1 }}</span>
+            <span class="vs-text">vs</span>
+            <span class="time-b">{{ jogo.time2 }}</span>
           </div>
 
-          <div class="partidas-grid">
-            <div *ngFor="let jogo of getJogosComResultados(rodada); trackBy: trackByJogo" class="partida-card">
-              <div class="partida-times">
-                <span class="time-a">{{ jogo.time1 }}</span>
-                <span class="vs-text">vs</span>
-                <span class="time-b">{{ jogo.time2 }}</span>
-              </div>
+          <div class="partida-info">
+            <span class="horario">{{ formatDateBR(jogo.data) }} • {{ jogo.horario }}</span>
+          </div>
 
-              <div class="partida-info">
-                <span class="horario">{{ jogo.horario }}</span>
-              </div>
+          <div class="partida-inputs">
+            <input 
+              type="number" 
+              [(ngModel)]="placares[jogo.id + '-a']"
+              placeholder="0"
+              min="0"
+              class="input-placar"
+            />
+            <span class="divisor">x</span>
+            <input 
+              type="number" 
+              [(ngModel)]="placares[jogo.id + '-b']"
+              placeholder="0"
+              min="0"
+              class="input-placar"
+            />
+            <button 
+              (click)="salvarPlacar(jogo)" 
+              class="btn-save"
+              [disabled]="savingIds().includes(jogo.id)"
+            >
+              {{ savingIds().includes(jogo.id) ? 'Salvando...' : (temResultado(jogo.id) ? 'Atualizar' : 'Salvar') }}
+            </button>
+          </div>
 
-              <div *ngIf="!temResultado(jogo.id)" class="partida-inputs">
-                <input 
-                  type="number" 
-                  [(ngModel)]="placares[jogo.id + '-a']"
-                  placeholder="0"
-                  min="0"
-                  class="input-placar"
-                />
-                <span class="divisor">x</span>
-                <input 
-                  type="number" 
-                  [(ngModel)]="placares[jogo.id + '-b']"
-                  placeholder="0"
-                  min="0"
-                  class="input-placar"
-                />
-                <button (click)="salvarPlacar(jogo)" class="btn-save">Salvar</button>
-              </div>
-
-              <div *ngIf="temResultado(jogo.id)" class="partida-resultado-salvo">
-                <span class="placar-final">{{ jogo.placarA }} x {{ jogo.placarB }}</span>
-                <span class="badge-salvo">✅ Salvo</span>
-                <button (click)="editarPlacar(jogo)" class="btn-edit">Editar</button>
-              </div>
-            </div>
+          <div *ngIf="temResultado(jogo.id)" class="partida-resultado-salvo">
+            <span class="placar-final">{{ jogo.placarA }} x {{ jogo.placarB }}</span>
+            <span class="badge-salvo">✅ Salvo</span>
+            <button (click)="editarPlacar(jogo)" class="btn-edit">Editar</button>
           </div>
         </div>
       </div>
@@ -118,48 +117,10 @@ interface JogoComResultado extends Jogo {
       letter-spacing: 0.03em;
     }
 
-    .rodadas-admin {
+    .partidas-admin {
       display: grid;
       gap: 2rem;
       margin-top: 2rem;
-    }
-
-    .rodada-bloco {
-      border: 1px solid rgba(1, 77, 30, 0.2);
-      border-radius: 1.2rem;
-      padding: 1.5rem;
-      background: rgba(248, 255, 241, 0.5);
-    }
-
-    .rodada-titulo {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1.5rem;
-      padding-bottom: 1rem;
-      border-bottom: 2px solid rgba(1, 150, 69, 0.2);
-    }
-
-    .rodada-titulo h2 {
-      margin: 0;
-      font-size: 1.2rem;
-      color: #012169;
-    }
-
-    .rodada-num {
-      display: inline-block;
-      padding: 0.4rem 0.8rem;
-      background: #009c45;
-      color: white;
-      border-radius: 999px;
-      font-weight: 700;
-      font-size: 0.75rem;
-    }
-
-    .partidas-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 1rem;
     }
 
     .partida-card {
@@ -170,6 +131,72 @@ interface JogoComResultado extends Jogo {
       background: rgba(255, 255, 255, 0.8);
       border: 1px solid rgba(1, 150, 69, 0.15);
       transition: all 0.3s ease;
+    }
+
+    .partida-card:hover {
+      box-shadow: 0 4px 12px rgba(1, 77, 30, 0.1);
+    }
+
+    .partida-times {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 0.5rem;
+      align-items: center;
+      text-align: center;
+    }
+
+    .time-a, .time-b {
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: #10233f;
+    }
+
+    .vs-text {
+      font-size: 0.7rem;
+      color: #37526d;
+      font-weight: 600;
+    }
+
+    .partida-info {
+      display: flex;
+      justify-content: center;
+    }
+
+    .horario {
+      display: inline-block;
+      padding: 0.3rem 0.7rem;
+      background: #ffea3d;
+      color: #012169;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.75rem;
+    }
+
+    .partida-inputs {
+      display: grid;
+      grid-template-columns: 60px auto 60px 1fr;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .input-placar {
+      padding: 0.6rem;
+      border: 1px solid #009c45;
+      border-radius: 0.5rem;
+      text-align: center;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .input-placar:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(1, 150, 69, 0.2);
+    }
+
+    .divisor {
+      text-align: center;
+      font-weight: 700;
+      color: #009c45;
     }
 
     .partida-card:hover {
@@ -255,6 +282,22 @@ interface JogoComResultado extends Jogo {
       transform: translateY(-1px);
     }
 
+    .btn-save:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      background: #6c84b7;
+    }
+
+    .feedback-message {
+      margin: 1rem 0;
+      padding: 0.9rem 1rem;
+      border-radius: 0.75rem;
+      background: rgba(1, 150, 69, 0.12);
+      color: #073d1e;
+      border: 1px solid rgba(1, 150, 69, 0.2);
+      font-weight: 700;
+    }
+
     .partida-resultado-salvo {
       display: grid;
       grid-template-columns: 1fr auto;
@@ -304,16 +347,6 @@ interface JogoComResultado extends Jogo {
         grid-template-columns: 1fr;
       }
 
-      .rodada-titulo {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-      }
-
-      .rodada-titulo h2 {
-        font-size: 1rem;
-      }
-
       .partida-inputs {
         grid-template-columns: 50px auto 50px;
       }
@@ -337,6 +370,7 @@ export class AdminComponent implements OnInit {
   totalPartidas = 0;
   placares: { [key: string]: string } = {};
   protected feedback = signal('');
+  protected savingIds = signal<string[]>([]);
 
   // Cache de resultados para evitar loops pesados de Change Detection
   private readonly resultadosCache = computed(() => {
@@ -354,25 +388,27 @@ export class AdminComponent implements OnInit {
 
   private calcularTotal(): void {
     this.totalPartidas = this.rodadasService
-      .getRodadas()
+      .getRodadasDoBrasil()
       .reduce((acc, r) => acc + r.jogos.length, 0);
   }
 
-  getJogosComResultados(rodada: Rodada): JogoComResultado[] {
+  jogosComResultados(): JogoComResultado[] {
     const cache = this.resultadosCache();
-    return rodada.jogos.map(jogo => {
-      const resultado = cache.get(jogo.id);
-      return {
-        ...jogo,
-        placarA: resultado?.a,
-        placarB: resultado?.b
-      };
-    });
+    return this.rodadasService
+      .getRodadasDoBrasil()
+      .flatMap(rodada => rodada.jogos)
+      .map(jogo => {
+        const resultado = cache.get(jogo.id);
+        return {
+          ...jogo,
+          placarA: resultado?.a,
+          placarB: resultado?.b
+        };
+      });
   }
 
   private obterPlacar(jogoId: string, tipo: 'a' | 'b'): string | undefined {
-    const cache = this.resultadosCache();
-    const resultado = cache.get(jogoId);
+    const resultado = this.resultadosCache().get(jogoId);
     return tipo === 'a' ? resultado?.a : resultado?.b;
   }
 
@@ -380,17 +416,31 @@ export class AdminComponent implements OnInit {
     return this.resultadosCache().has(jogoId) && this.obterPlacar(jogoId, 'a') !== undefined;
   }
 
-  salvarPlacar(jogo: Jogo): void {
+  async salvarPlacar(jogo: Jogo): Promise<void> {
     const placarA = this.placares[jogo.id + '-a'] || '0';
     const placarB = this.placares[jogo.id + '-b'] || '0';
+    const id = jogo.id;
 
+    this.savingIds.set([...this.savingIds(), id]);
     const partida = `${jogo.time1} x ${jogo.time2}`;
-    this.resultadosService.addResultado(partida, placarA, placarB, jogo.id);
 
-    delete this.placares[jogo.id + '-a'];
-    delete this.placares[jogo.id + '-b'];
-    this.feedback.set(`✅ Placar de ${partida} salvo!`);
-    setTimeout(() => this.feedback.set(''), 3000);
+    try {
+      const ok = await this.resultadosService.addResultado(partida, placarA, placarB, jogo.id);
+
+      if (ok) {
+        delete this.placares[jogo.id + '-a'];
+        delete this.placares[jogo.id + '-b'];
+        this.feedback.set(`✅ Placar de ${partida} salvo com sucesso!`);
+      } else {
+        this.feedback.set(`⚠️ Falha ao salvar resultado de ${partida}. Verifique o console.`);
+      }
+    } catch (error) {
+      console.error('Erro no salvarPlacar:', error, jogo);
+      this.feedback.set(`⚠️ Erro inesperado ao salvar resultado de ${partida}. Veja console.`);
+    } finally {
+      this.savingIds.set(this.savingIds().filter(item => item !== id));
+      setTimeout(() => this.feedback.set(''), 4000);
+    }
   }
 
   editarPlacar(jogo: Jogo): void {
@@ -406,11 +456,21 @@ export class AdminComponent implements OnInit {
     return Math.round((this.resultadosService.resultados().length / this.totalPartidas) * 100);
   }
 
-  protected trackByRodada(_index: number, rodada: Rodada): string {
-    return rodada.id;
-  }
-
   protected trackByJogo(_index: number, jogo: Jogo): string {
     return jogo.id;
+  }
+
+  formatDateBR(date?: string): string {
+    if (!date) return '';
+    const m = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+    const d = new Date(date);
+    if (!isNaN(d.getTime())) {
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const yyyy = d.getFullYear();
+      return `${dd}/${mm}/${yyyy}`;
+    }
+    return date;
   }
 }

@@ -8,6 +8,7 @@ import { RodadasComponent } from './rodadas.component';
 import { AdminComponent } from './admin.component';
 import { adminGuard } from './admin.guard';
 import { authGuard } from './auth.guard';
+import { RankingRodadaComponent } from './ranking-rodada.component';
 
 export const routes: Routes = [
   {
@@ -37,6 +38,11 @@ export const routes: Routes = [
   {
     path: 'resultados',
     component: ResultadosComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'ranking-rodada',
+    component: RankingRodadaComponent,
     canActivate: [authGuard]
   },
   {

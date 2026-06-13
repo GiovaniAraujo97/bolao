@@ -14,6 +14,7 @@ export class App {
   protected readonly title = signal('bolao-copa-adega');
   protected readonly auth = inject(AuthService);
   protected readonly router = inject(Router);
+  protected readonly mobileMenuOpen = signal(false);
 
   constructor() {
     // Após a restauração inicial da sessão, se estivermos na rota de login
@@ -32,6 +33,10 @@ export class App {
   protected async logout(): Promise<void> {
     await this.auth.logout();
     this.router.navigate(['/login']);
+  }
+
+  protected toggleMobileMenu(): void {
+    this.mobileMenuOpen.set(!this.mobileMenuOpen());
   }
 
   protected get isLoginRoute(): boolean {

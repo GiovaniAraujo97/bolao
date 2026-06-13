@@ -50,6 +50,20 @@ export class PalpitesService {
       this.authService.user();
       this.loadParticipantes();
     });
+
+    // configura listeners em tempo real para refletir alterações de palpites
+    try {
+      // usa canal público para escutar alterações em `palpites`
+      const channel = supabase.channel('public:palpites');
+      channel.on('postgres_changes', { event: '*', schema: 'public', table: 'palpites' }, () => {
+        // recarrega participantes quando houver mudança
+        this.loadParticipantes();
+      });
+      channel.subscribe();
+    } catch (e) {
+      // não bloqueia a inicialização se realtime não estiver disponível
+      console.debug('Realtime channel not available for palpites:', e);
+    }
   }
 
   getParticipantes(): PalpitesParticipante[] {
@@ -107,16 +121,84 @@ export class PalpitesService {
       return;
     }
 
-    const { error } = await supabase
-      .from('palpites')
-      .upsert(rows, { onConflict: 'user_id,jogo_id' });
+    try {
+      try {
+        console.debug('[savePalpitesDoUsuarioAtual] preparando upsert rows:', rows);
+      } catch (e) {}
 
-    if (error) {
-      console.error('Falha ao salvar palpites no Supabase:', error);
-      return;
+      const { data: upsertData, error } = await supabase
+        .from('palpites')
+        .upsert(rows, { onConflict: 'user_id,jogo_id' })
+        .select('user_id,jogo_id,placar_a,placar_b');
+
+      try {
+        console.debug('[savePalpitesDoUsuarioAtual] upsert resultado:', { upsertData, error });
+      } catch (e) {}
+
+      if (error) {
+        console.error('Falha ao salvar palpites no Supabase:', error);
+        // fallback local quando tabela ausente
+        const participantes = this.participantes();
+        const userEmail = email;
+        const existente = participantes.find(p => p.email === userEmail);
+        if (existente) {
+          rows.forEach(r => {
+            existente.palpites[r.jogo_id] = r.placar_a;
+            existente.palpites[`${r.jogo_id}-b`] = r.placar_b;
+          });
+        } else {
+          const novo: PalpitesParticipante = {
+            id: userId,
+            nome,
+            email: userEmail,
+            criadoEm: new Date().toISOString(),
+            palpites: {}
+          };
+          rows.forEach(r => {
+            novo.palpites[r.jogo_id] = r.placar_a;
+            novo.palpites[`${r.jogo_id}-b`] = r.placar_b;
+          });
+          participantes.unshift(novo);
+        }
+        this.participantes.set(participantes);
+        this.saveToStorage(this.participantes());
+        return;
+      }
+
+      // atualização otimista local: mescla os palpites no participante atual ou cria um novo
+      const atual = this.getParticipanteAtual();
+      if (atual) {
+        const novo = { ...atual, palpites: { ...atual.palpites } } as PalpitesParticipante;
+        rows.forEach(r => {
+          novo.palpites[r.jogo_id] = r.placar_a;
+          novo.palpites[`${r.jogo_id}-b`] = r.placar_b;
+        });
+
+        const others = this.participantes().filter(p => p.email !== novo.email);
+        this.participantes.set([novo, ...others]);
+      } else {
+        // cria participante temporário local para refletir imediatamente na UI
+        const novoEmail = email;
+        const novoId = userId;
+        const novo: PalpitesParticipante = {
+          id: novoId,
+          nome,
+          email: novoEmail,
+          criadoEm: new Date().toISOString(),
+          palpites: {}
+        };
+        rows.forEach(r => {
+          novo.palpites[r.jogo_id] = r.placar_a;
+          novo.palpites[`${r.jogo_id}-b`] = r.placar_b;
+        });
+        this.participantes.set([novo, ...this.participantes()]);
+      }
+
+      // garante estado canônico lendo do backend (e também alimenta outros clientes via realtime)
+      await this.loadParticipantes();
+    } catch (err) {
+      console.error('Erro ao salvar palpites:', err);
     }
-
-    await this.loadParticipantes();
   }
 
   getParticipantesDaRodada(rodada: Rodada): PalpitesParticipante[] {
@@ -173,16 +255,10 @@ export class PalpitesService {
           const placarA = parseInt(resultado.placarA, 10);
           const placarB = parseInt(resultado.placarB, 10);
           const acertouExato = palpiteA === placarA && palpiteB === placarB;
-          const resultadoPalpite = Math.sign(palpiteA - palpiteB);
-          const resultadoReal = Math.sign(placarA - placarB);
-
-          if (resultadoPalpite === resultadoReal) {
-            pontos += 3;
-            acertos += 1;
-          }
 
           if (acertouExato) {
-            pontos += 1;
+            pontos += 10;
+            acertos += 1;
             exatos += 1;
           }
 
@@ -225,6 +301,12 @@ export class PalpitesService {
 
       if (error) {
         console.error('Falha ao carregar palpites do Supabase:', error);
+        // tenta recuperar do armazenamento local quando a tabela não existe
+        const local = this.loadFromStorage();
+        if (local) {
+          this.participantes.set(local);
+          return;
+        }
         this.participantes.set([]);
         return;
       }
@@ -237,23 +319,59 @@ export class PalpitesService {
       const participantesMap = new Map<string, PalpitesParticipante>();
 
       data.forEach((row: PalpiteRegistro) => {
-        const participante: PalpitesParticipante = participantesMap.get(row.user_id) ?? {
+        const emailNorm = (row.email || '').trim().toLowerCase();
+        const key = emailNorm || row.user_id;
+        const existing: PalpitesParticipante = participantesMap.get(key) ?? {
           id: row.user_id,
           nome: row.user_name,
-          email: row.email,
+          email: emailNorm,
           criadoEm: row.created_at ? new Date(row.created_at).toISOString() : new Date().toISOString(),
           palpites: {}
         };
 
-        participante.palpites[row.jogo_id] = row.placar_a;
-        participante.palpites[`${row.jogo_id}-b`] = row.placar_b;
-        participantesMap.set(row.user_id, participante);
+        existing.palpites[row.jogo_id] = row.placar_a;
+        existing.palpites[`${row.jogo_id}-b`] = row.placar_b;
+        participantesMap.set(key, existing);
       });
 
       this.participantes.set(Array.from(participantesMap.values()));
     } catch (error) {
       console.error('Erro inesperado ao carregar palpites:', error);
+      const local = this.loadFromStorage();
+      if (local) {
+        this.participantes.set(local);
+        return;
+      }
       this.participantes.set([]);
+    }
+  }
+
+  private loadFromStorage(): PalpitesParticipante[] | null {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = localStorage.getItem(this.STORAGE_KEY) || localStorage.getItem(this.LEGACY_STORAGE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as PalpitesParticipante[];
+      if (!Array.isArray(parsed)) return null;
+      // normaliza emails e estrutura
+      const normalized = parsed.map(p => ({
+        ...p,
+        email: (p.email || '').trim().toLowerCase(),
+        palpites: p.palpites || {}
+      }));
+      return normalized;
+    } catch (e) {
+      console.debug('Falha ao ler palpites do localStorage:', e);
+      return null;
+    }
+  }
+
+  private saveToStorage(participantes: PalpitesParticipante[]): void {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(participantes));
+    } catch (e) {
+      console.debug('Falha ao gravar palpites no localStorage:', e);
     }
   }
 
@@ -277,5 +395,11 @@ export class PalpitesService {
       localStorage.setItem('bolao-usuario-anonimo', anonId);
     }
     return anonId;
+  }
+
+  // Retorna o identificador de email (normalizado) do usuário atual ou o email anônimo gerado
+  getCurrentUserEmail(): string {
+    const user = this.authService.user();
+    return (user?.email?.trim().toLowerCase()) || this.getAnonimoEmail();
   }
 }

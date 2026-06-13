@@ -18,7 +18,7 @@ BEGIN
     SELECT 1 FROM pg_policy WHERE polname = 'Usuário vê próprio perfil' AND polrelid = 'profiles'::regclass
   ) THEN
     CREATE POLICY "Usuário vê próprio perfil"
-      ON profiles FOR SELECT
+      ON profiles FOR SELECT 
       USING (auth.uid() = user_id);
   END IF;
 END$$;
@@ -74,6 +74,62 @@ create unique index if not exists palpites_user_jogo_unique on palpites(user_id,
 
 alter table palpites enable row level security;
 
+create table if not exists resultados (
+  id uuid primary key default gen_random_uuid(),
+  partida text not null,
+  jogo_id text unique,
+  placar_a text not null,
+  placar_b text not null,
+  atualizado_em timestamptz not null default now()
+);
+
+alter table resultados enable row level security;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policy WHERE polname = 'Qualquer usuário seleciona resultados' AND polrelid = 'resultados'::regclass
+  ) THEN
+    CREATE POLICY "Qualquer usuário seleciona resultados"
+      ON resultados FOR SELECT
+      USING (true);
+  END IF;
+END$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policy WHERE polname = 'Qualquer usuário insere resultados' AND polrelid = 'resultados'::regclass
+  ) THEN
+    CREATE POLICY "Qualquer usuário insere resultados"
+      ON resultados FOR INSERT
+      WITH CHECK (true);
+  END IF;
+END$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policy WHERE polname = 'Qualquer usuário atualiza resultados' AND polrelid = 'resultados'::regclass
+  ) THEN
+    CREATE POLICY "Qualquer usuário atualiza resultados"
+      ON resultados FOR UPDATE
+      USING (true)
+      WITH CHECK (true);
+  END IF;
+END$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policy WHERE polname = 'Qualquer usuário exclui resultados' AND polrelid = 'resultados'::regclass
+  ) THEN
+    CREATE POLICY "Qualquer usuário exclui resultados"
+      ON resultados FOR DELETE
+      USING (true);
+  END IF;
+END$$;
+
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -82,7 +138,7 @@ BEGIN
     CREATE POLICY "Usuário insere palpite próprio"
       ON palpites FOR INSERT
       WITH CHECK (
-        auth.uid() = user_id
+        auth.uid()::text = user_id
         OR user_id LIKE 'anonimo-%'
       );
   END IF;
@@ -96,11 +152,11 @@ BEGIN
     CREATE POLICY "Usuário atualiza palpite próprio"
       ON palpites FOR UPDATE
       USING (
-        auth.uid() = user_id
+        auth.uid()::text = user_id
         OR user_id LIKE 'anonimo-%'
       )
       WITH CHECK (
-        auth.uid() = user_id
+        auth.uid()::text = user_id
         OR user_id LIKE 'anonimo-%'
       );
   END IF;

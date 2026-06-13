@@ -6,12 +6,8 @@ export const authGuard: CanActivateFn = async () => {
   const auth = inject(AuthService);
   const router = inject(Router);
 
-  // Aguarda a restauração inicial da sessão, mas não indefinidamente (timeout de 2s)
-  const readyPromise = (auth as AuthService).ready;
-  await Promise.race([
-    readyPromise,
-    new Promise<void>((res) => setTimeout(res, 2000))
-  ]);
+  // Aguarda a restauração inicial da sessão antes de avaliar o guard.
+  await (auth as AuthService).ready;
 
   return auth.isAuthenticated()
     ? true

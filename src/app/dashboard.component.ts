@@ -9,44 +9,22 @@ import { RodadasService } from './rodadas.service';
   imports: [CommonModule, RouterLink],
   template: `
     <section class="page page-dashboard">
-      <header>
-        <h1>🏆 Copa - Bolão da Adega</h1>
-        <p>Bem-vindo! Acompanhe todas as rodadas, faça seus palpites e compete com os amigos.</p>
+      <header class="dashboard-hero">
+        <div class="hero-content">
+          <h1 class="hero-title"><img src="/taca.png" alt="troféu" class="hero-icon" /> Copa - Bolão da Adega</h1>
+          <p class="hero-lead">Bem-vindo! Acompanhe todas as rodadas, faça seus palpites e compita com os amigos.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" routerLink="/rodadas">Ver Rodadas</a>
+            <a class="btn btn-outline" routerLink="/meus-palpites">Meus Palpites</a>
+          </div>
+        </div>
       </header>
-
-      <div class="hero-banner">
-        <h2>⚽ Faça seus palpites no bolão da Copa 2026.</h2>
-        <p>Escolha cada dia, coloque seus palpites em todos os jogos e veja sua taxa de acerto. Quanto mais acertos, melhor sua posição no ranking!</p>
-      </div>
-
-      <div class="stats-container">
-        <div class="stat-box">
-          <span class="stat-icone">🎯</span>
-          <span class="stat-numero">{{ totalRodadas }}</span>
-          <span class="stat-texto">Dias de Jogo</span>
-        </div>
-        <div class="stat-box">
-          <span class="stat-icone">⚽</span>
-          <span class="stat-numero">{{ totalJogos }}</span>
-          <span class="stat-texto">Partidas no Total</span>
-        </div>
-        <div class="stat-box">
-          <span class="stat-icone">🇧🇷</span>
-          <span class="stat-numero">{{ totalJogosBrasil }}</span>
-          <span class="stat-texto">Jogos do Brasil</span>
-        </div>
-        <div class="stat-box">
-          <span class="stat-icone">📅</span>
-          <span class="stat-numero">3</span>
-          <span class="stat-texto">Rodadas</span>
-        </div>
-      </div>
 
       <div class="próximos-jogos">
         <h3>📍 Próximos Jogos</h3>
         <div class="mini-cards">
           <div *ngFor="let rodada of proximasRodadas()" class="mini-card">
-            <span class="data">{{ rodada.dataFormatada }}</span>
+            <span class="data">{{ formatDateBR(rodada.data) }}</span>
             <span class="dia">{{ rodada.diaSemana }}</span>
             <span class="count">{{ rodada.jogos.length }} jogos</span>
           </div>
@@ -55,17 +33,17 @@ import { RodadasService } from './rodadas.service';
 
       <div class="link-grid">
         <a class="card card-primary" routerLink="/rodadas">
-          <span class="icone">🎯</span>
+          <img src="/rodadas.png" alt="rodadas" class="card-icon" />
           <strong>Rodadas</strong>
           <span>Faça palpites nos jogos do dia.</span>
         </a>
         <a class="card card-secondary" routerLink="/meus-palpites">
-          <span class="icone">📊</span>
+          <img src="/palpite.png" alt="palpites" class="card-icon" />
           <strong>Meus Palpites</strong>
           <span>Acompanhe seus acertos e taxa.</span>
         </a>
         <a class="card card-tertiary" routerLink="/resultados">
-          <span class="icone">🏆</span>
+          <img src="/taca.png" alt="troféu" class="card-icon" />
           <strong>Resultados</strong>
           <span>Veja os resultados oficiais.</span>
         </a>
@@ -73,11 +51,68 @@ import { RodadasService } from './rodadas.service';
     </section>
   `,
   styles: [`
-    .stats-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 1rem;
-      margin: 2rem 0;
+    /* Dashboard hero styles */
+    .dashboard-hero {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem 0 1.5rem;
+    }
+
+    .hero-content {
+      text-align: center;
+      max-width: 820px;
+      width: 100%;
+      padding: 1.5rem 1.75rem;
+    }
+
+    .hero-title {
+      margin: 0;
+      font-size: clamp(1.5rem, 3.5vw, 2.25rem);
+      font-weight: 900;
+      color: #ffffff;
+      text-transform: none;
+      letter-spacing: 0.01em;
+      text-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+    }
+
+    .hero-title .hero-icon {
+      width: 34px;
+      height: 34px;
+      object-fit: contain;
+      display: inline-block;
+    }
+
+    .hero-lead {
+      margin: 0.5rem 0 1rem 0;
+      color: rgba(255,255,255,0.95);
+      font-size: 1.02rem;
+      font-weight: 600;
+    }
+
+    .hero-actions {
+      display: inline-flex;
+      gap: 0.6rem;
+      margin-top: 0.25rem;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn { text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1rem; border-radius: 999px; font-weight: 800; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .btn-primary { background: #ffea3d; color: #012169; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12); }
+    .btn-outline { background: rgba(255,255,255,0.16); color: #ffffff; border: 1px solid rgba(255,255,255,0.28); }
+    .btn:hover { transform: translateY(-1px); }
+
+    @media (max-width: 760px) {
+      .hero-content { padding: 1rem; border-radius: 0.9rem; }
+      .hero-title { font-size: 1.1rem; }
+      .hero-lead { font-size: 0.95rem; }
+      .hero-actions { gap: 0.4rem; }
+      .btn { padding: 0.6rem 0.8rem; font-size: 0.95rem; }
     }
 
     .stat-box {
@@ -94,6 +129,14 @@ import { RodadasService } from './rodadas.service';
     .stat-icone {
       font-size: 2rem;
       display: block;
+    }
+
+    .stat-icon {
+      width: 32px;
+      height: 32px;
+      display: block;
+      margin: 0 auto 0.6rem;
+      object-fit: contain;
     }
 
     .stat-numero {
@@ -177,9 +220,9 @@ import { RodadasService } from './rodadas.service';
       padding: 1.5rem;
       border-radius: 1rem;
       text-decoration: none;
-      color: #10233f;
-      border: 1px solid rgba(1, 77, 30, 0.15);
-      background: rgba(255, 255, 255, 0.6);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: url('/fundo-card.png') center/cover no-repeat;
       transition: all 0.3s ease;
     }
 
@@ -190,32 +233,38 @@ import { RodadasService } from './rodadas.service';
 
     .card-primary {
       border-color: rgba(1, 150, 69, 0.3);
-      background: linear-gradient(135deg, rgba(1, 150, 69, 0.1) 0%, rgba(248, 255, 241, 0.8) 100%);
     }
 
     .card-secondary {
       border-color: rgba(255, 234, 61, 0.3);
-      background: linear-gradient(135deg, rgba(255, 234, 61, 0.12) 0%, rgba(248, 255, 241, 0.8) 100%);
     }
 
     .card-tertiary {
       border-color: rgba(1, 33, 105, 0.2);
-      background: linear-gradient(135deg, rgba(1, 33, 105, 0.08) 0%, rgba(248, 255, 241, 0.8) 100%);
     }
 
-    .card .icone {
+    .card .icone,
+    .card .card-icon {
       font-size: 1.8rem;
       display: block;
     }
 
+    .card-icon {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+      display: block;
+      margin-bottom: 0.75rem;
+    }
+
     .card strong {
       font-size: 1.1rem;
-      color: #012169;
+      color: #ffffff;
     }
 
     .card span:last-child {
       font-size: 0.85rem;
-      color: #37526d;
+      color: rgba(255, 255, 255, 0.92);
       line-height: 1.5;
     }
 
@@ -287,5 +336,19 @@ export class DashboardComponent implements OnInit {
       .getRodadasDoBrasil()
       .filter(r => new Date(r.data) >= agora)
       .slice(0, 4);
+  }
+
+  formatDateBR(date?: string): string {
+    if (!date) return '';
+    const m = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+    const d = new Date(date);
+    if (!isNaN(d.getTime())) {
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const yyyy = d.getFullYear();
+      return `${dd}/${mm}/${yyyy}`;
+    }
+    return date;
   }
 }
