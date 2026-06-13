@@ -12,8 +12,7 @@ import { ResultadosService } from './resultados.service';
     <section class="page page-ranking-rodada">
       <header class="page-header-card">
         <div class="page-title">
-          <p class="eyebrow">Ranking da Rodada</p>
-          <h1>🏆 Performance por rodada</h1>
+          <p class="eyebrow"><img class="page-icon" src="/taca.png" alt="Taça" />Ranking da Rodada</p>
           <p>Veja o resultado dos participantes, destaque os acertos exatos e acompanhe a rodada atual.</p>
         </div>
         <div class="page-actions">
@@ -37,317 +36,56 @@ import { ResultadosService } from './resultados.service';
     </section>
   `,
   styles: [`
-    .page {
-      padding: 0 1rem;
+    .page-header-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 320px); gap: 2rem; padding: 2rem 2rem 1.8rem; border-radius: 1.25rem; background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(227,250,235,0.95) 100%); border: 1px solid rgba(1,150,69,0.24); box-shadow: 0 24px 40px rgba(0,0,0,0.12); margin-bottom: 2rem; }
+    .page-title { max-width: 100%; }
+    .eyebrow { margin: 0 0 0.65rem; font-size: 0.82rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: #012169; display: inline-flex; align-items: center; gap: 0.55rem; }
+    .page-icon { width: 22px; height: 22px; object-fit: contain; display: inline-block; }
+    .page-title h1 { margin: 0 0 0.8rem; font-size: clamp(2rem, 2.5vw, 2.4rem); color: #0b6623; line-height: 1.05; }
+    .page-title p { margin: 0; color: #10233f; line-height: 1.85; font-size: 1rem; max-width: none; }
+
+    .page-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 0.75rem; width: 100%; justify-self: end; }
+    .select-label { font-weight: 800; color: #10233f; display: block; margin-left: 0.2rem; letter-spacing: 0.03em; }
+    .select-wrapper { position: relative; display: inline-block; width: 100%; max-width: 320px; }
+    .select-rodada { appearance: none; -webkit-appearance: none; -moz-appearance: none; width: 100%; padding: 1rem 2.4rem 1rem 1rem; border-radius: 1rem; border: 1px solid rgba(1,150,69,0.3); background: linear-gradient(180deg, #ffffff 0%, #ecf9ef 100%); font-weight: 700; color: #0f172a; cursor: pointer; box-shadow: 0 16px 30px rgba(0,0,0,0.12); }
+    .select-wrapper::after { content: '▾'; position: absolute; right: 18px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #012169; font-size: 1rem; }
+
+    .ranking-list { background: rgba(255,255,255,0.95); border-radius: 1.1rem; padding: 1rem 1rem 0.6rem; border: 1px solid rgba(1,150,69,0.16); box-shadow: 0 18px 30px rgba(0,0,0,0.07); }
+    .ranking-row { display: grid; grid-template-columns: 50px 1fr 120px 110px; gap: 1rem; padding: 1rem 0.4rem; border-bottom: 1px solid rgba(1,34,70,0.08); align-items: center; }
+    .ranking-row:last-child { border-bottom: none; }
+    .pos { font-weight: 800; color: #10233f; }
+    .nome { font-weight: 700; color: #10233f; white-space: normal; overflow: visible; }
+    .pontos { font-weight: 800; text-align: right; color: #0b6623; }
+    .status { font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; text-align: right; color: #10233f; }
+    .status.acertou { color: #0b6623; }
+    .status.perdeu { color: #9d1212; }
+    .status.aguardando { color: #475569; }
+
+    /* Responsive: adapt ranking table for smaller screens */
+    @media (max-width: 880px) {
+      .ranking-row { grid-template-columns: 40px 1fr 84px; }
+      .pontos { text-align: right; }
+      .status { display: inline-flex; justify-content: flex-end; }
+      .page-header-card { grid-template-columns: 1fr; }
+      .page-actions { width: 100%; justify-self: stretch; }
+      .page-title { width: 100%; }
+      .select-wrapper { max-width: 100%; }
     }
 
-    .page-header-card {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 2rem;
-      padding: 1.8rem 1.8rem 1.5rem;
-      border-radius: 1rem;
-      background: linear-gradient(180deg, #ffffff 0%, #eef7ef 100%);
-      border: 1px solid rgba(1,150,69,0.18);
-      box-shadow: 0 18px 30px rgba(0,0,0,0.08);
-      margin-bottom: 1.8rem;
-      flex-wrap: wrap;
+    @media (max-width: 520px) {
+      .ranking-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0; }
+      .ranking-row span { white-space: normal; overflow: visible; color: #07131a !important; }
+      .pos { width: 32px; flex: 0 0 32px; text-align: left; }
+      .nome { flex: 1 1 auto; font-size: 0.95rem; }
+      .pontos { display: none !important; }
+      .status { display: inline-flex; flex: 0 0 auto; min-width: 72px; justify-content: center; padding: 0.35rem 0.7rem; border-radius: 0.65rem; background: rgba(11,102,35,0.18); color: #062d13 !important; font-weight: 700; }
+      .status.acertou { background: rgba(11,102,35,0.22); color: #05320f !important; }
+      .status.perdeu { background: rgba(166,0,0,0.18); color: #870000 !important; }
+      .status.aguardando { background: rgba(71,85,105,0.08); color: #475569 !important; }
+      .page-header-card { padding: 1.2rem 1rem 1rem; }
+      .page-title { margin-top: 0.5rem; }
+      .page-title p { margin-top: 0.35rem; }
     }
 
-    .page-title {
-      max-width: 62%;
-      flex: 1;
-      min-width: 250px;
-    }
-
-    .eyebrow {
-      margin: 0 0 0.5rem;
-      font-size: 0.85rem;
-      font-weight: 800;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: #0b6623;
-    }
-
-    .page-title h1 {
-      margin: 0 0 0.7rem;
-      font-size: 2rem;
-      color: #0f172a;
-      line-height: 1.1;
-    }
-
-    .page-title p {
-      margin: 0;
-      color: #475569;
-      line-height: 1.8;
-      font-size: 1rem;
-      max-width: 38rem;
-    }
-
-    .page-actions {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 0.5rem;
-      min-width: 280px;
-    }
-
-    .select-label {
-      font-weight: 700;
-      color: #10233f;
-      display: block;
-      font-size: 0.95rem;
-    }
-
-    .select-wrapper {
-      position: relative;
-      display: inline-block;
-      width: 100%;
-    }
-
-    .select-rodada {
-      appearance: none;
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      width: 100%;
-      padding: 0.95rem 2.4rem 0.95rem 1rem;
-      border-radius: 0.95rem;
-      border: 1px solid rgba(1,150,69,0.22);
-      background: linear-gradient(180deg, #ffffff, #eff9ef);
-      font-weight: 700;
-      color: #0f172a;
-      cursor: pointer;
-      box-shadow: 0 10px 22px rgba(0,0,0,0.08);
-      font-size: 0.95rem;
-    }
-
-    .select-wrapper::after {
-      content: '▾';
-      position: absolute;
-      right: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-      pointer-events: none;
-      color: #012169;
-      font-size: 1rem;
-    }
-
-    .ranking-list {
-      border-radius: 1rem;
-      overflow: hidden;
-    }
-
-    .ranking-row {
-      display: grid;
-      grid-template-columns: 40px 1fr 130px 120px;
-      gap: 1rem;
-      padding: 0.8rem;
-      border-bottom: 1px solid rgba(0,0,0,0.08);
-      align-items: center;
-      background: #fff;
-    }
-
-    .pos {
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 40px;
-      height: 40px;
-      background: linear-gradient(135deg, #0b6623, #087a3a);
-      color: #fff;
-      border-radius: 50%;
-      font-size: 0.9rem;
-    }
-
-    .nome {
-      font-weight: 700;
-      color: #0f172a;
-      word-break: break-word;
-    }
-
-    .pontos {
-      font-weight: 700;
-      color: #0b6623;
-      text-align: right;
-      font-size: 1rem;
-    }
-
-    .status {
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.02em;
-      text-align: right;
-      padding: 0.4rem 0.8rem;
-      border-radius: 0.5rem;
-      font-size: 0.8rem;
-    }
-
-    .status.acertou {
-      color: #0b6623;
-      background: rgba(11, 102, 35, 0.1);
-    }
-
-    .status.perdeu {
-      color: #c70000;
-      background: rgba(199, 0, 0, 0.1);
-    }
-
-    /* Tablets */
-    @media (max-width: 768px) {
-      .page {
-        padding: 0 0.75rem;
-      }
-
-      .page-header-card {
-        flex-direction: column;
-        gap: 1.5rem;
-        padding: 1.5rem 1.2rem;
-      }
-
-      .page-title {
-        max-width: 100%;
-        min-width: auto;
-      }
-
-      .page-title h1 {
-        font-size: 1.75rem;
-      }
-
-      .page-title p {
-        font-size: 0.95rem;
-      }
-
-      .page-actions {
-        width: 100%;
-        align-items: stretch;
-        min-width: auto;
-      }
-
-      .select-wrapper {
-        width: 100%;
-      }
-
-      .ranking-row {
-        grid-template-columns: 35px 1fr 100px 100px;
-        gap: 0.8rem;
-        padding: 0.7rem;
-        font-size: 0.95rem;
-      }
-
-      .pos {
-        width: 35px;
-        height: 35px;
-        font-size: 0.8rem;
-      }
-
-      .pontos {
-        font-size: 0.95rem;
-      }
-
-      .status {
-        font-size: 0.75rem;
-        padding: 0.3rem 0.6rem;
-      }
-    }
-
-    /* Mobile */
-    @media (max-width: 480px) {
-      .page {
-        padding: 0 0.5rem;
-      }
-
-      .page-header-card {
-        padding: 1.2rem 1rem;
-        border-radius: 0.75rem;
-        margin-bottom: 1.2rem;
-      }
-
-      .eyebrow {
-        font-size: 0.75rem;
-      }
-
-      .page-title h1 {
-        font-size: 1.4rem;
-        margin-bottom: 0.5rem;
-      }
-
-      .page-title p {
-        font-size: 0.9rem;
-        line-height: 1.6;
-      }
-
-      .select-label {
-        font-size: 0.85rem;
-      }
-
-      .select-rodada {
-        padding: 0.8rem 2rem 0.8rem 0.8rem;
-        border-radius: 0.75rem;
-        font-size: 0.9rem;
-      }
-
-      .ranking-list {
-        border-radius: 0.75rem;
-      }
-
-      .ranking-row {
-        grid-template-columns: 32px 1fr 80px;
-        gap: 0.6rem;
-        padding: 0.6rem;
-        font-size: 0.9rem;
-      }
-
-      .pos {
-        width: 32px;
-        height: 32px;
-        font-size: 0.75rem;
-      }
-
-      .nome {
-        font-size: 0.95rem;
-        min-width: 0;
-      }
-
-      .pontos {
-        display: none;
-      }
-
-      .status {
-        font-size: 0.7rem;
-        padding: 0.25rem 0.5rem;
-        white-space: nowrap;
-      }
-
-      .ranking-row .status {
-        grid-column: 3;
-      }
-    }
-
-    /* Extra small phones */
-    @media (max-width: 360px) {
-      .page-title h1 {
-        font-size: 1.25rem;
-      }
-
-      .ranking-row {
-        grid-template-columns: 30px 1fr;
-        gap: 0.5rem;
-      }
-
-      .pos {
-        width: 30px;
-        height: 30px;
-        font-size: 0.7rem;
-      }
-
-      .status {
-        grid-column: 1 / -1;
-        margin-top: 0.3rem;
-        text-align: left;
-      }
-    }
   `]
 })
 export class RankingRodadaComponent {
@@ -375,6 +113,7 @@ export class RankingRodadaComponent {
     );
 
     const participantes = this.palpitesService.getParticipantes();
+    const resultadosDisponiveis = rodada.jogos.reduce((count, jogo) => count + (resultadosPorId.has(jogo.id) ? 1 : 0), 0);
 
     const rows = participantes.map(p => {
       let pontos = 0;
@@ -399,9 +138,12 @@ export class RankingRodadaComponent {
       return { nome: p.nome, pontos };
     });
 
-    return rows
-      .map((r, i) => ({ pos: i + 1, ...r, status: r.pontos > 0 ? 'ACERTOU' : 'PERDEU' }))
-      .sort((a, b) => b.pontos - a.pontos || a.nome.localeCompare(b.nome));
+    const sorted = rows.sort((a, b) => b.pontos - a.pontos || a.nome.localeCompare(b.nome));
+    return sorted.map((r, i) => ({
+      pos: i + 1,
+      ...r,
+      status: resultadosDisponiveis === 0 ? 'AGUARDANDO' : r.pontos > 0 ? 'ACERTOU' : 'PERDEU'
+    }));
   }
 
   formatDateBR(date?: string): string {

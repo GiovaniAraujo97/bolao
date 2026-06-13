@@ -232,6 +232,9 @@ export class AuthService {
 
     const phone = user.user_metadata?.phone ?? '';
     const role = user.user_metadata?.role === 'admin' ? 'admin' : 'user';
+    const firstName = user.user_metadata?.first_name ?? user.user_metadata?.firstName ?? '';
+    const lastName = user.user_metadata?.last_name ?? user.user_metadata?.lastName ?? '';
+    const fullName = user.user_metadata?.full_name ?? user.user_metadata?.fullName ?? '';
 
     if (!phone) {
       this.profile.set(null);
@@ -245,7 +248,10 @@ export class AuthService {
           user_id: user.id,
           email: user.email,
           phone,
-          role
+          role,
+          first_name: firstName,
+          last_name: lastName,
+          full_name: fullName
         },
         { onConflict: 'user_id' }
       )

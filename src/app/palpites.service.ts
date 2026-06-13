@@ -20,6 +20,7 @@ export interface ClassificacaoUsuario {
   acertos: number;
   exatos: number;
   palpitesRegistrados: number;
+  pos?: number;
 }
 
 interface PalpiteRegistro {
@@ -81,6 +82,8 @@ export class PalpitesService {
     if (atual) {
       return atual.nome;
     }
+    const display = this.authService.displayName?.();
+    if (display) return display;
     const user = this.authService.user();
     return this.deriveNome(user?.email);
   }
@@ -89,7 +92,7 @@ export class PalpitesService {
     const user = this.authService.user();
     const email = user?.email?.trim().toLowerCase() || this.getAnonimoEmail();
     const userId = user?.id || email;
-    const nome = this.deriveNome(user?.email);
+    const nome = this.authService.displayName?.() || this.deriveNome(user?.email);
 
     const jogoIds = Array.from(
       new Set(
@@ -166,7 +169,7 @@ export class PalpitesService {
       }
 
       // atualização otimista local: mescla os palpites no participante atual ou cria um novo
-      const atual = this.getParticipanteAtual();
+        const atual = this.getParticipanteAtual();
       if (atual) {
         const novo = { ...atual, palpites: { ...atual.palpites } } as PalpitesParticipante;
         rows.forEach(r => {
@@ -280,7 +283,8 @@ export class PalpitesService {
         b.exatos - a.exatos ||
         b.acertos - a.acertos ||
         a.nome.localeCompare(b.nome)
-      );
+      )
+      .map((r, i) => ({ pos: i + 1, ...r } as ClassificacaoUsuario & { pos: number }));
   }
 
   private async initialize(): Promise<void> {
@@ -305,6 +309,37 @@ export class PalpitesService {
         const local = this.loadFromStorage();
         if (local) {
           this.participantes.set(local);
+
+          // tenta enriquecer participantes locais com dados de `profiles` quando disponível
+          try {
+            const ids = local.map(p => p.id).filter(Boolean);
+            const emails = local.map(p => (p.email || '').trim().toLowerCase()).filter(Boolean);
+            const filters: any = {};
+            if (ids.length > 0) filters.user_id = ids;
+            // consulta profiles por user_id e email
+            const { data: profilesData } = await supabase
+              .from('profiles')
+              .select('user_id, email, full_name, first_name, last_name')
+              .or(`${ids.length ? `user_id.in.(${ids.join(',')})` : ''}${ids.length && emails.length ? ',' : ''}${emails.length ? `email.in.(${emails.map(e=>`"${e}"`).join(',')})` : ''}`);
+
+            if (Array.isArray(profilesData) && profilesData.length > 0) {
+              const profileMapById = new Map(profilesData.map((pf: any) => [pf.user_id, pf]));
+              const profileMapByEmail = new Map(profilesData.map((pf: any) => [ (pf.email || '').trim().toLowerCase(), pf ]));
+              const updated = local.map(p => {
+                let pf = profileMapById.get(p.id);
+                if (!pf && p.email) pf = profileMapByEmail.get(p.email.trim().toLowerCase());
+                if (pf) {
+                  const candidate = (pf.full_name || [pf.first_name, pf.last_name].filter(Boolean).join(' ')).trim();
+                  if (candidate) p.nome = candidate;
+                }
+                return p;
+              });
+              this.participantes.set(updated);
+            }
+          } catch (e) {
+            console.debug('Falha ao enriquecer participantes locais com profiles:', e);
+          }
+
           return;
         }
         this.participantes.set([]);
@@ -334,7 +369,38 @@ export class PalpitesService {
         participantesMap.set(key, existing);
       });
 
-      this.participantes.set(Array.from(participantesMap.values()));
+      const participantesArray: PalpitesParticipante[] = Array.from(participantesMap.values());
+
+      // tenta enriquecer participantes com nome completo vindo da tabela `profiles`
+      try {
+        const ids = participantesArray.map(p => p.id).filter(Boolean);
+        if (ids.length > 0) {
+          const { data: profilesData } = await supabase
+            .from('profiles')
+            .select('user_id, email, full_name, first_name, last_name')
+            .in('user_id', ids);
+
+          if (Array.isArray(profilesData)) {
+            const profileMapById = new Map(profilesData.map((pf: any) => [pf.user_id, pf]));
+            const profileMapByEmail = new Map(profilesData.map((pf: any) => [ (pf.email || '').trim().toLowerCase(), pf ]));
+            participantesArray.forEach(p => {
+              let pf = profileMapById.get(p.id);
+              if (!pf && p.email) pf = profileMapByEmail.get(p.email.trim().toLowerCase());
+              if (pf) {
+                const candidate = (pf.full_name || [pf.first_name, pf.last_name].filter(Boolean).join(' ')).trim();
+                if (candidate) {
+                  p.nome = candidate;
+                }
+              }
+            });
+          }
+        }
+      } catch (e) {
+        // não bloqueia caso a consulta a profiles falhe
+        console.debug('Falha ao enriquecer participantes com profiles:', e);
+      }
+
+      this.participantes.set(participantesArray);
     } catch (error) {
       console.error('Erro inesperado ao carregar palpites:', error);
       const local = this.loadFromStorage();

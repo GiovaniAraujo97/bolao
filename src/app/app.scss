@@ -32,16 +32,26 @@ textarea {
 }
 
 header.app-header {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) auto minmax(160px, 1fr);
   align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem;
+  justify-items: center;
+  gap: 1rem;
   padding: 1.4rem 1.8rem;
   background: linear-gradient(135deg, #012169 0%, #009c45 45%, #ffea3d 100%);
   color: #ffffff;
   box-shadow: 0 14px 50px rgba(0, 0, 0, 0.22);
   border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.header-left {
+  justify-self: start;
+  width: 100%;
+}
+
+.header-right {
+  justify-self: end;
+  width: 100%;
 }
 
 header.app-header .header-user {
@@ -55,9 +65,9 @@ header.app-header .header-user {
   white-space: normal;
   overflow: visible;
   text-overflow: unset;
-  max-width: 320px;
+  max-width: 100%;
   min-width: 0;
-  line-height: 1.1;
+  line-height: 1.2;
 }
 
 header.app-header .header-user-line {
@@ -68,8 +78,55 @@ header.app-header .header-user-line {
 header.app-header .brand-group {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  justify-content: center;
+  justify-self: center;
   min-width: 0;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
+  padding-left: 0.9rem;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
+  justify-self: end;
+  width: 100%;
+  padding-left: 0.3rem; /* desloca o sanduíche um pouco para a esquerda */
+}
+
+.header-right .mobile-menu {
+  margin-left: -0.6rem; /* empurra o botão do menu ainda mais para a esquerda */
+}
+
+/* Regras mais específicas para garantir que o botão do menu se desloque à esquerda */
+.header-right .menu-toggle {
+  margin-left: -10px !important;
+  transform: none !important;
+  position: relative;
+  left: -5px;
+}
+
+header.app-header .header-user {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.92rem;
+  font-weight: 700;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  max-width: 100%;
+  min-width: 0;
+  line-height: 1.2;
 }
 
  header.app-header .brand-crest {
@@ -116,6 +173,16 @@ header.app-header h1 {
   max-width: 520px;
   text-transform: uppercase;
   color: #ffffff;
+}
+
+/* Small trophy icon used in Rodadas header */
+.page-rodadas header h1 img.page-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 0.5rem;
 }
 
 header.app-header .profile-summary {
@@ -347,20 +414,26 @@ main::before {
   z-index: 1;
   text-align: center;
   margin-bottom: 2rem;
+  padding: 2.6rem 1.25rem 1.6rem;
+  border-radius: 1.25rem;
+  background: linear-gradient(rgba(1,18,105,0.18), rgba(1,150,69,0.06)), url('/fundo-card.png') center 60%/cover no-repeat;
+  -webkit-background-size: cover;
+  background-size: cover;
 }
 
 .page-login header h1 {
   font-size: clamp(2rem, 4vw, 2.7rem);
   letter-spacing: 0.02em;
   margin-bottom: 0.65rem;
-  color: #012169;
+  color: #ffffff;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.35);
 }
 
 .page-login header p {
   margin: 0 auto;
   max-width: 28rem;
-  color: #37526d;
-  line-height: 1.75;
+  color: rgba(255,255,255,0.92);
+  line-height: 1.6;
 }
 
 .login-panel {
@@ -368,6 +441,26 @@ main::before {
   z-index: 1;
   display: grid;
   gap: 2rem;
+}
+
+.login-actions {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.login-actions button {
+  width: 100%;
+}
+
+.login-actions button.secondary {
+  background: transparent;
+  color: #012169;
+  border: 1px solid rgba(1, 77, 30, 0.22);
+  box-shadow: none;
+}
+
+.login-actions button.secondary:hover {
+  background: rgba(1, 77, 30, 0.06);
 }
 
 .form-card {
@@ -433,7 +526,63 @@ main::before {
 }
 
 .message-modal {
-  position: fixed;
+  position: relative;
+  z-index: 2;
+  max-width: 100%;
+  margin: 1.5rem 0 0;
+  padding: 1rem 1.25rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid rgba(1, 77, 30, 0.16);
+  color: #10233f;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+}
+
+.message-modal p {
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.message-modal .close-modal {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  border: none;
+  background: transparent;
+  color: #10233f;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+footer.footnote {
+  margin-top: 1rem;
+  padding: 0.25rem 0 0.5rem;
+  display: grid;
+  align-items: center;
+  justify-items: center;
+  gap: 0.65rem;
+  text-align: center;
+  color: #ffffff;
+  font-size: 0.96rem;
+}
+
+footer.footnote a {
+  color: #ffffff;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+footer.footnote a:hover {
+  text-decoration: underline;
+}
+
+footer.footnote span {
+  display: block;
+  font-size: 0.95rem;
+  color: #ffffff;
+  letter-spacing: 0.01em;
 }
 
 /* Mobile hamburger menu styles */
@@ -488,11 +637,11 @@ main::before {
     border: none;
     outline: none;
   }
-  .menu-toggle svg { width: 28px; height: 20px; }
+  .menu-toggle svg { width: 34px; height: 24px; }
   .menu-toggle svg rect { transition: transform 0.2s ease, opacity 0.2s ease; transform-origin: center; }
-  .menu-toggle.open svg rect:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+  .menu-toggle.open svg rect:nth-child(1) { transform: translateY(8px) rotate(45deg); }
   .menu-toggle.open svg rect:nth-child(2) { opacity: 0; }
-  .menu-toggle.open svg rect:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+  .menu-toggle.open svg rect:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
   .mobile-nav {
     display: none;
     position: absolute;
@@ -526,35 +675,60 @@ main::before {
     text-transform: uppercase;
     font-size: 0.95rem;
   }
+  .mobile-nav {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    width: min(96vw, 320px);
+    padding: 1rem;
+    gap: 0.85rem;
+    flex-direction: column;
+    justify-content: flex-start;
+    background: linear-gradient(135deg, #012169 0%, #009c45 45%, #ffea3d 100%);
+    color: #ffffff;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.24);
+    border-radius: 1.5rem;
+    backdrop-filter: blur(14px);
+    z-index: 140;
+    overflow: hidden;
+  }
+
   .mobile-nav a,
   .mobile-nav button.logout-button {
     display: block;
     width: 100%;
-    padding: 1rem 1.15rem;
-    border-radius: 1rem;
-    background: #f0f9ff;
-    color: #012169;
+    padding: 0.95rem 1.15rem;
+    border-radius: 0.9rem;
+    background: transparent;
+    color: #ffffff;
     font-weight: 700;
     text-align: center;
     text-decoration: none;
-    box-shadow: inset 0 1px 4px rgba(0,0,0,0.04);
-    border: 1px solid rgba(1, 29, 97, 0.12);
-  }
-  .mobile-nav a:hover,
-  .mobile-nav button.logout-button:hover {
-    background: rgba(255,255,255,1);
+    box-shadow: none;
+    border: 1px solid rgba(255,255,255,0.08);
   }
 
-  .brand-group { justify-self: center; margin: 0 auto; }
+  .mobile-nav a:hover,
+  .mobile-nav button.logout-button:hover {
+    background: rgba(255,255,255,0.06);
+  }
+
+  .mobile-nav .mobile-nav-header {
+    color: #ffffff;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .mobile-nav .mobile-nav-header span {
+    color: #ffffff;
+  }
+
+  .brand-group { justify-self: start; margin: 0; }
   .brand-copy .eyebrow { display: none; }
   .brand-crest img { width: 48px; height: 48px; }
 
-  /* ensure logo visually centered when hamburger is absolute */
-  /* place logo inside header (top center) and restore crest background */
   header.app-header { padding-top: 0.9rem; padding-bottom: 0.9rem; }
-  /* center logo at top of header (inside header) */
-  .brand-group { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); z-index: 80; }
-  /* logo container with transparent background */
+  .brand-group { position: static; left: auto; top: auto; transform: none; z-index: auto; }
   header.app-header .brand-crest { background: transparent; border: none; width: 80px; height: 80px; border-radius: 1rem; display: grid; place-items: center; box-shadow: none; }
   header.app-header .brand-crest img { width: 56px; height: 56px; }
 

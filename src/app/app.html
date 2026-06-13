@@ -1,8 +1,14 @@
 <div class="app-shell">
-  <header class="app-header">
-    <div class="header-user" *ngIf="auth.isAuthenticated() && auth.displayNameLines() as nameLines">
-      <span class="header-user-line">{{ nameLines[0] }}</span>
-      <span class="header-user-line" *ngIf="nameLines[1]">{{ nameLines[1] }}</span>
+  <header *ngIf="!isLoginRoute" class="app-header">
+    <div class="header-left">
+      <div class="header-user" *ngIf="auth.isAuthenticated()">
+        <ng-container *ngIf="auth.displayNameLines() as nameLines; else userEmail">
+          <span class="header-user-line" *ngFor="let line of nameLines">{{ line }}</span>
+        </ng-container>
+        <ng-template #userEmail>
+          <span class="header-user-line">{{ auth.profile()?.email || auth.user()?.email }}</span>
+        </ng-template>
+      </div>
     </div>
 
     <div class="brand-group">
@@ -11,56 +17,50 @@
           <img src="/bola.png" alt="bola" />
         </a>
       </div>
-      <div class="brand-copy">
-        <p class="eyebrow">Bolão da Copa na Adega</p>
-        <div class="profile-summary" *ngIf="auth.isAuthenticated()">
-          <span class="profile-name">{{ auth.displayName() || auth.profile()?.email || auth.user()?.email }}</span>
-          <span *ngIf="auth.profile()">• {{ auth.profile()?.phone }}</span>
-          <span *ngIf="auth.profile()">• {{ auth.profile()?.role }}</span>
-        </div>
-      </div>
     </div>
 
-    <div class="mobile-menu" [class.open]="mobileMenuOpen()">
-      <button type="button" class="menu-toggle" [class.open]="mobileMenuOpen()" aria-label="Abrir menu" aria-expanded="{{ mobileMenuOpen() }}" (click)="toggleMobileMenu()">
-        <svg width="22" height="16" viewBox="0 0 22 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-          <rect y="1" width="22" height="2" rx="1" fill="currentColor" />
-          <rect y="7" width="22" height="2" rx="1" fill="currentColor" />
-          <rect y="13" width="22" height="2" rx="1" fill="currentColor" />
-        </svg>
-      </button>
-      <div class="mobile-backdrop" *ngIf="mobileMenuOpen()" (click)="toggleMobileMenu()"></div>
-      <nav *ngIf="mobileMenuOpen() && auth.isAuthenticated(); else apenasLoginMobile" class="mobile-nav">
-        <div class="mobile-nav-header">
-          <span>Menu</span>
-        </div>
-        <a routerLink="/dashboard" (click)="toggleMobileMenu()">Painel</a>
-        <a *ngIf="!auth.isAdmin()" routerLink="/rodadas" (click)="toggleMobileMenu()">Rodadas</a>
-        <a *ngIf="!auth.isAdmin()" routerLink="/meus-palpites" (click)="toggleMobileMenu()">Meus palpites</a>
-        <a routerLink="/resultados" (click)="toggleMobileMenu()">Resultados</a>
-        <a routerLink="/ranking-rodada" (click)="toggleMobileMenu()">Ranking da Rodada</a>
-        <a *ngIf="auth.isAdmin()" routerLink="/admin" (click)="toggleMobileMenu()">Admin</a>
-        <button type="button" class="logout-button" (click)="logout(); toggleMobileMenu()">Sair</button>
+    <div class="header-right">
+      <nav *ngIf="auth.isAuthenticated(); else apenasLogin" class="main-nav">
+        <a routerLink="/dashboard">Painel</a>
+        <a *ngIf="!auth.isAdmin()" routerLink="/rodadas">Rodadas</a>
+        <a *ngIf="!auth.isAdmin()" routerLink="/meus-palpites">Meus palpites</a>
+        <a routerLink="/resultados">Resultados</a>
+        <a routerLink="/ranking-rodada">Ranking da Rodada</a>
+        <a *ngIf="auth.isAdmin()" routerLink="/admin">Admin</a>
+        <button type="button" class="logout-button" (click)="logout()">Sair</button>
       </nav>
-      <ng-template #apenasLoginMobile>
-        <nav *ngIf="mobileMenuOpen()" class="mobile-nav">
+
+      <div class="mobile-menu" [class.open]="mobileMenuOpen()">
+        <button type="button" class="menu-toggle" aria-label="Abrir menu" aria-expanded="{{ mobileMenuOpen() }}" (click)="toggleMobileMenu()">
+          <svg width="34" height="24" viewBox="0 0 34 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+            <rect y="2" width="34" height="3" rx="1.5" fill="white" />
+            <rect y="10" width="34" height="3" rx="1.5" fill="white" />
+            <rect y="18" width="34" height="3" rx="1.5" fill="white" />
+          </svg>
+        </button>
+        <div class="mobile-backdrop" *ngIf="mobileMenuOpen()" (click)="toggleMobileMenu()"></div>
+        <nav *ngIf="mobileMenuOpen() && auth.isAuthenticated(); else apenasLoginMobile" class="mobile-nav">
           <div class="mobile-nav-header">
             <span>Menu</span>
           </div>
-          <a *ngIf="!isLoginRoute" routerLink="/login" (click)="toggleMobileMenu()">Login</a>
+          <a routerLink="/dashboard" (click)="toggleMobileMenu()">Painel</a>
+          <a *ngIf="!auth.isAdmin()" routerLink="/rodadas" (click)="toggleMobileMenu()">Rodadas</a>
+          <a *ngIf="!auth.isAdmin()" routerLink="/meus-palpites" (click)="toggleMobileMenu()">Meus palpites</a>
+          <a routerLink="/resultados" (click)="toggleMobileMenu()">Resultados</a>
+          <a routerLink="/ranking-rodada" (click)="toggleMobileMenu()">Ranking da Rodada</a>
+          <a *ngIf="auth.isAdmin()" routerLink="/admin" (click)="toggleMobileMenu()">Admin</a>
+          <button type="button" class="logout-button" (click)="logout(); toggleMobileMenu()">Sair</button>
         </nav>
-      </ng-template>
+        <ng-template #apenasLoginMobile>
+          <nav *ngIf="mobileMenuOpen()" class="mobile-nav">
+            <div class="mobile-nav-header">
+              <span>Menu</span>
+            </div>
+            <a *ngIf="!isLoginRoute" routerLink="/login" (click)="toggleMobileMenu()">Login</a>
+          </nav>
+        </ng-template>
+      </div>
     </div>
-
-    <nav *ngIf="auth.isAuthenticated(); else apenasLogin" class="main-nav">
-      <a routerLink="/dashboard">Painel</a>
-      <a *ngIf="!auth.isAdmin()" routerLink="/rodadas">Rodadas</a>
-      <a *ngIf="!auth.isAdmin()" routerLink="/meus-palpites">Meus palpites</a>
-      <a routerLink="/resultados">Resultados</a>
-      <a routerLink="/ranking-rodada">Ranking da Rodada</a>
-      <a *ngIf="auth.isAdmin()" routerLink="/admin">Admin</a>
-      <button type="button" class="logout-button" (click)="logout()">Sair</button>
-    </nav>
 
     <ng-template #apenasLogin>
       <nav class="main-nav">
@@ -72,4 +72,7 @@
   <main>
     <router-outlet></router-outlet>
   </main>
+  <footer class="footnote">
+    <span>Site licenciado e desenvolvido por Giovani Araujo - Engenheiro de Software Sênior</span>
+  </footer>
 </div>

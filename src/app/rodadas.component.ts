@@ -12,11 +12,11 @@ import { PalpitesService, PalpitesParticipante } from './palpites.service';
   template: `
     <section class="page page-rodadas">
       <header>
-        <h1><img src="taca.png" alt="Taça" class="header-icon" /> Rodadas</h1>
-        <p>Pelo o que vai acontecer mesmo, 0 para quem perder e 10 para quem ganhar</p>
+        <h1><img src="/taca.png" alt="Taça" class="page-icon" /> Rodadas</h1>
+        <p>De seu palpite e tenha a chance de levar o Bolão da Adega (lá ele)</p>
       </header>
 
-      <div class="ranking-block" *ngIf="ranking().length > 0">
+      <div class="ranking-block" *ngIf="ranking().length > 0; else noRanking">
         <div class="ranking-topo">
           <div>
             <h2>🏅 Classificação do Bolão</h2>
@@ -33,16 +33,32 @@ import { PalpitesService, PalpitesParticipante } from './palpites.service';
             <span>Status</span>
           </div>
 
-          <div *ngFor="let item of ranking() | slice:0:6; let i = index" class="ranking-row">
-            <span>{{ i + 1 }}</span>
-            <span>{{ item.nome }}</span>
-            <span>{{ item.pontos }} pts</span>
-            <span>{{ item.pontos === 10 ? 'ACERTOU' : 'PERDEU' }}</span>
+          <div *ngFor="let item of ranking(); let i = index" class="ranking-row">
+            <span class="pos">{{ item.pos ?? (i + 1) }}</span>
+            <span class="nome">{{ item.nome }}</span>
+            <span class="pontos">{{ item.pontos }} pts</span>
+            <span class="status">{{ statusLabel(item) }}</span>
           </div>
         </div>
       </div>
+      <ng-template #noRanking>
+        <div class="ranking-block empty">
+          <p style="margin:0 0 .6rem 0; font-weight:800; color:#065a14">Nenhuma classificação encontrada</p>
+          <p style="margin:0;color:#37526d">Ainda não há palpites registrados para a rodada selecionada. Crie seu palpite para aparecer na classificação.</p>
+          <div style="margin-top:0.8rem">
+            <a routerLink="/rodadas" class="btn-salvar" style="display:inline-block;padding:.6rem 1rem;border-radius:.8rem">Ir para Rodadas</a>
+          </div>
+        </div>
+      </ng-template>
 
       <div class="rodadas-container">
+        <div class="debug-box" style="background:#f8fafb;border:1px solid rgba(0,0,0,0.06);padding:0.8rem;border-radius:0.8rem;margin-bottom:0.8rem;">
+          <strong>DEBUG</strong>
+          <div style="margin-top:0.45rem;font-size:0.95rem;color:#213b3a">Participantes carregados: {{ palpitesService.getParticipantes().length }}</div>
+          <pre style="max-height:160px;overflow:auto;background:#fff;border:1px solid rgba(0,0,0,0.04);padding:0.6rem;border-radius:0.5rem;margin-top:0.6rem">{{ palpitesService.getParticipantes() | json }}</pre>
+          <div style="margin-top:0.6rem;font-size:0.95rem;color:#213b3a">Classificação:</div>
+          <pre style="max-height:160px;overflow:auto;background:#fff;border:1px solid rgba(0,0,0,0.04);padding:0.6rem;border-radius:0.5rem;margin-top:0.4rem">{{ ranking() | json }}</pre>
+        </div>
         <div *ngFor="let rodada of rodadas()" class="rodada-dia" [class.inativa]="rodadaEstaBloqueada(rodada)">
           <div class="rodada-header">
             <h2>📅 {{ formatDateBR(rodada.data) }} ({{ rodada.diaSemana }})</h2>
@@ -134,14 +150,6 @@ import { PalpitesService, PalpitesParticipante } from './palpites.service';
     </section>
   `,
   styles: [`
-    .header-icon {
-      height: 1.8rem;
-      width: 1.8rem;
-      display: inline;
-      margin-right: 0.5rem;
-      vertical-align: middle;
-    }
-
     .rodadas-container {
       display: grid;
       gap: 1.25rem;
@@ -423,11 +431,11 @@ import { PalpitesService, PalpitesParticipante } from './palpites.service';
 
     .ranking-row {
       display: grid;
-      grid-template-columns: 0.65fr 1.3fr 0.85fr 0.95fr;
-      gap: 0.85rem;
+      grid-template-columns: 48px 1fr 120px 100px;
+      gap: 0.75rem;
       align-items: center;
-      padding: 0.75rem 0;
-      border-bottom: 1px solid rgba(1, 150, 69, 0.1);
+      padding: 0.6rem 0;
+      border-bottom: 1px solid rgba(1, 150, 69, 0.08);
     }
 
     .ranking-row.ranking-titulo {
@@ -438,7 +446,7 @@ import { PalpitesService, PalpitesParticipante } from './palpites.service';
 
     .ranking-row span {
       min-width: 0;
-      color: #10233f;
+      color: #07131a !important;
       font-size: 0.95rem;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -462,8 +470,9 @@ import { PalpitesService, PalpitesParticipante } from './palpites.service';
       .palpites-inputs { grid-template-columns: 1fr 1fr; }
       .palpite-input { width: 100%; }
       .btn-salvar { padding: 0.85rem 1rem; }
-      .ranking-row { grid-template-columns: 0.9fr 1.3fr 1fr; }
-      .ranking-row span:nth-child(4) { display: none; }
+      .ranking-row { grid-template-columns: 40px 1fr 84px; }
+      .pontos { text-align: right; font-weight: 800; color: #10233f; }
+      .status { display: none; }
       .participante-card { gap: 0.5rem; }
       .ranking-topo { flex-direction: column; align-items: flex-start; }
     }
@@ -478,8 +487,8 @@ import { PalpitesService, PalpitesParticipante } from './palpites.service';
       .team-card { max-width: 100px; width: 100%; flex: 1 1 0; }
       .game-info { width: 58px; }
       .jogo-card { padding: 0.85rem; }
-      .ranking-row { grid-template-columns: 1fr 1.2fr; }
-      .ranking-row span:nth-child(3), .ranking-row span:nth-child(4) { display: none; }
+      .ranking-row { grid-template-columns: 1fr 1.2fr 84px; }
+      .ranking-row span:nth-child(4) { display: none; }
       .rodada-participantes { padding: 0.9rem; }
       .participante-card { gap: 0.4rem; padding: 0.7rem 0; }
     }
@@ -523,34 +532,8 @@ export class RodadasComponent implements OnInit {
     this.palpites = stored ? { ...stored } : {};
   });
 
-  // Quando o serviço de palpites fornece valores já persistidos para o usuário,
-  // marca automaticamente as rodadas correspondentes como salvas para desativar o botão.
-  protected readonly savedFromParticipantEffect = effect(() => {
-    const stored = this.palpitesService.getPalpitesUsuarioAtual();
-    if (!stored) return;
-
-    const computed: number[] = [];
-    this.rodadas().forEach(rodada => {
-      const all = rodada.jogos.every(jogo =>
-        stored[jogo.id] !== undefined && stored[jogo.id + '-b'] !== undefined
-      );
-      if (all) computed.push(rodada.numero);
-    });
-
-    if (computed.length === 0) return;
-
-    const merged = Array.from(new Set([...this.savedRodadas(), ...computed]));
-    if (this.arraysAreEqual(merged, this.savedRodadas())) {
-      return;
-    }
-
-    this.savedRodadas.set(merged);
-    this.persistSavedRodadas(merged);
-  });
-
-  // rodadas que foram bloqueadas localmente após salvar (resposta imediata)
+  // Rodadas que foram bloqueadas localmente após salvar nesta sessão.
   protected readonly blockedRodadas = signal<number[]>([]);
-  protected readonly savedRodadas = signal<number[]>([]);
 
   protected readonly rodadas = computed(() => this.rodadasService.getRodadasDoBrasil());
   palpites: { [key: string]: number } = {};
@@ -605,38 +588,7 @@ export class RodadasComponent implements OnInit {
 
   ngOnInit(): void {
     this.carregarPalpitesLocais();
-    // carrega savedRodadas específico do usuário atual
-    this.savedRodadas.set(this.loadSavedRodadas());
-  }
-
-  private storageKeyForUser(): string {
-    try {
-      const email = this.palpitesService.getCurrentUserEmail() || 'anon';
-      return `bolao-saved-rodadas:${email}`;
-    } catch (e) {
-      return 'bolao-saved-rodadas:anon';
-    }
-  }
-
-  private loadSavedRodadas(): number[] {
-    if (typeof window === 'undefined') return [];
-    try {
-      const key = this.storageKeyForUser();
-      const raw = localStorage.getItem(key);
-      if (!raw) return [];
-      const parsed = JSON.parse(raw) as number[];
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (e) {
-      return [];
-    }
-  }
-
-  private persistSavedRodadas(list: number[]): void {
-    if (typeof window === 'undefined') return;
-    try {
-      const key = this.storageKeyForUser();
-      localStorage.setItem(key, JSON.stringify(list));
-    } catch (e) {}
+    try { console.debug('[RodadasComponent] participantes (inicial):', this.palpitesService.getParticipantes().length, this.palpitesService.getParticipantes()); } catch (e) {}
   }
 
   private carregarPalpitesLocais(): void {
@@ -674,12 +626,6 @@ export class RodadasComponent implements OnInit {
     if (!this.blockedRodadas().includes(rodada.numero)) {
       this.blockedRodadas.set([rodada.numero, ...this.blockedRodadas()]);
     }
-    // marca como efetivamente salva (persistida localmente)
-    if (!this.savedRodadas().includes(rodada.numero)) {
-      const next = [rodada.numero, ...this.savedRodadas()];
-      this.savedRodadas.set(next);
-      this.persistSavedRodadas(next);
-    }
     this.modalMessage.set('Seu palpite foi salvo com sucesso. Esta rodada ficará inativa para você porque você já palpitou.');
     this.feedback.set('Seus palpites foram salvos.');
     setTimeout(() => this.feedback.set(''), 3000);
@@ -691,7 +637,6 @@ export class RodadasComponent implements OnInit {
     // - o usuário já salvou explicitamente nessa instância (savedRodadas),
     // - a rodada foi bloqueada na sessão atual (blockedRodadas),
     // - ou se o backend/participante atual já possui palpites completos para esta rodada.
-    if (this.savedRodadas().includes(rodada.numero)) return true;
     if (this.blockedRodadas().includes(rodada.numero)) return true;
     if (this.usuarioSalvouRodada(rodada)) return true;
     return false;
@@ -740,11 +685,11 @@ export class RodadasComponent implements OnInit {
     this.modalMessage.set('');
   }
 
-  private arraysAreEqual(a: number[], b: number[]): boolean {
-    if (a.length !== b.length) return false;
-    for (let i = 0; i < a.length; i++) {
-      if (a[i] !== b[i]) return false;
-    }
-    return true;
+  protected statusLabel(item: { pontos: number }): string {
+    return this.resultadosService.resultados().length === 0
+      ? 'AGUARDANDO'
+      : item.pontos > 0
+        ? 'ACERTOU'
+        : 'PERDEU';
   }
 }

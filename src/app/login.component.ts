@@ -40,7 +40,7 @@ import { AuthService } from './auth.service';
 
           <label>
             Senha
-            <input type="password" name="visible-password" autocomplete="new-password" #senhaInput placeholder="••••••••" required />
+            <input type="password" name="visible-password" autocomplete="new-password" #senhaInput placeholder="6 dígitos" required />
           </label>
 
           <label *ngIf="mode === 'signup'">
@@ -49,9 +49,10 @@ import { AuthService } from './auth.service';
               type="tel"
               name="telefone"
               autocomplete="tel"
-              placeholder="(00) 00000-0000"
+              placeholder="(00) 0 0000-0000"
+              maxlength="16"
               [value]="telefone"
-              (input)="telefone = $any($event.target).value"
+              (input)="telefone = formatPhoneNumber($any($event.target).value)"
               required
             />
           </label>
@@ -76,7 +77,8 @@ import { AuthService } from './auth.service';
         <a routerLink="/dashboard">Ir para o painel</a>
       </footer>
     </section>
-  `
+  `,
+  styles: []
 })
 export class LoginComponent implements OnInit {
   protected readonly auth = inject(AuthService);
@@ -106,6 +108,21 @@ export class LoginComponent implements OnInit {
 
   protected closeMessage(): void {
     this.auth.message.set('');
+  }
+
+  protected formatPhoneNumber(value: string): string {
+    // Remove tudo que não é número
+    const onlyNumbers = value.replace(/\D/g, '');
+    
+    // Limita a 11 dígitos
+    const limited = onlyNumbers.slice(0, 11);
+    
+    // Formata conforme vai digitando: (xx) x xxxx-xxxx
+    if (limited.length === 0) return '';
+    if (limited.length <= 2) return `(${limited}`;
+    if (limited.length <= 3) return `(${limited.slice(0, 2)}) ${limited.slice(2)}`;
+    if (limited.length <= 7) return `(${limited.slice(0, 2)}) ${limited.slice(2, 3)} ${limited.slice(3, 7)}`;
+    return `(${limited.slice(0, 2)}) ${limited.slice(2, 3)} ${limited.slice(3, 7)}-${limited.slice(7, 11)}`;
   }
 
   protected async onLogin(email: string, senha: string): Promise<void> {
